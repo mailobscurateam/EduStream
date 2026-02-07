@@ -44,6 +44,11 @@
             border-radius: 0;
         }
 
+        /* Hide status bar in fullscreen */
+        #video-section:fullscreen #status-bar {
+            display: none;
+        }
+
         .teams-container iframe {
             position: absolute;
             top: 0;
@@ -202,7 +207,7 @@
                     </div>
                 </div>
 
-                <div class="mt-4 sm:mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div id="status-bar" class="mt-4 sm:mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <div class="w-2 h-2 bg-emerald-500 rounded-full pulse"></div>
                         <span class="text-xs sm:text-sm text-emerald-800 dark:text-emerald-400 font-medium">Session Active: Connected securely.</span>
