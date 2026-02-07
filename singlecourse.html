@@ -33,7 +33,7 @@
             z-index: 1;
         }
 
-        /* Fullscreen-specific adjustments for the container */
+        /* Fullscreen-specific adjustments */
         #video-section:fullscreen {
             max-width: none;
             width: 100vw;
@@ -58,12 +58,25 @@
             z-index: 50;
         }
 
-        /* Hide details area in fullscreen */
-        #video-section:fullscreen .details-card {
-            display: none;
+        /* Moving Watermark Styling */
+        .watermark {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.2;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            z-index: 30;
+            user-select: none;
+            transition: all 2s ease-in-out; /* Smooth movement */
+            white-space: nowrap;
         }
 
-        /* Protection Layer: Transparent div that blocks clicks to the iframe */
+        @media (min-width: 768px) {
+            .watermark { font-size: 0.9rem; }
+        }
+
         .video-protection-layer {
             position: absolute;
             top: 0;
@@ -75,25 +88,6 @@
             cursor: default;
         }
 
-        .watermark {
-            position: absolute;
-            top: 15%;
-            left: 5%;
-            pointer-events: none;
-            opacity: 0.25;
-            color: white;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
-            z-index: 30;
-            user-select: none;
-        }
-
-        @media (min-width: 768px) {
-            .watermark { font-size: 1.1rem; }
-        }
-
-        /* Custom Controls Styling */
         .custom-controls {
             background: #1e293b;
             border-bottom-left-radius: 0.75rem;
@@ -102,12 +96,6 @@
             z-index: 40;
         }
 
-        #speed-menu {
-            bottom: 100%;
-            margin-bottom: 8px;
-        }
-
-        /* Progress Bar Styling */
         .progress-container {
             width: 100%;
             height: 6px;
@@ -116,49 +104,17 @@
             position: relative;
             transition: height 0.1s ease;
         }
-        @media (min-width: 768px) {
-            .progress-container { height: 4px; }
-            .progress-container:hover { height: 6px; }
-        }
         #progress-bar {
             height: 100%;
             background: #10b981;
             width: 0%;
             position: relative;
         }
-        #progress-bar::after {
-            content: '';
-            position: absolute;
-            right: -6px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            background: #10b981;
-            border-radius: 50%;
-            opacity: 1;
-            transition: opacity 0.1s ease;
-        }
-        @media (min-width: 768px) {
-            #progress-bar::after { opacity: 0; }
-            .progress-container:hover #progress-bar::after { opacity: 1; }
-        }
 
-        /* Responsive Mobile Layout Fixes */
         @media (max-width: 1023px) {
-            #app-content {
-                height: auto;
-                flex-direction: column-reverse;
-            }
-            aside {
-                height: auto;
-                max-height: 500px;
-                border-r: 0;
-                border-t: 1px solid #e2e8f0;
-            }
-            main {
-                padding: 1rem;
-            }
+            #app-content { height: auto; flex-direction: column-reverse; }
+            aside { height: auto; max-height: 500px; border-t: 1px solid #e2e8f0; }
+            main { padding: 1rem; }
         }
     </style>
 </head>
@@ -180,24 +136,21 @@
         <aside class="w-full lg:w-80 xl:w-96 bg-white lg:border-r border-slate-200 flex flex-col h-full overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center">
                 <h2 class="font-bold text-slate-800 uppercase text-xs tracking-widest">Curriculum</h2>
-                <span class="lg:hidden text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-500">Scroll Down for Lessons</span>
             </div>
             <div id="curriculum-list" class="flex-grow curriculum-scroll overflow-y-auto p-4 space-y-4 pb-20 lg:pb-4"></div>
         </aside>
 
         <main class="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-10">
             <div id="video-section" class="max-w-5xl mx-auto space-y-0">
-                <!-- Enhanced Video Container with Protection Layer -->
-                <div class="video-wrapper shadow-xl md:shadow-2xl">
+                <div class="video-wrapper shadow-xl md:shadow-2xl" id="player-wrapper">
                     <div id="video-placeholder" class="absolute inset-0 z-10 flex flex-col items-center justify-center text-slate-400 font-medium bg-slate-900 p-6 text-center">
                         <svg class="w-12 h-12 mb-3 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <span class="text-sm">Select a lesson from the curriculum below to start learning</span>
+                        <span class="text-sm">Select a lesson to start learning</span>
                     </div>
                     
-                    <!-- Watermark -->
+                    <!-- Dynamic Watermark -->
                     <div id="watermark-overlay" class="watermark hidden"></div>
                     
-                    <!-- The Protection Layer -->
                     <div id="protection-layer" class="video-protection-layer hidden" oncontextmenu="return false;"></div>
                     
                     <div id="player-container">
@@ -205,77 +158,49 @@
                     </div>
                 </div>
 
-                <!-- Custom Player Controls -->
+                <!-- Custom Controls -->
                 <div id="custom-player-controls" class="custom-controls flex flex-col text-white hidden">
-                    <!-- Progress Bar Component -->
                     <div id="progress-container" class="progress-container">
                         <div id="progress-bar"></div>
                     </div>
 
                     <div class="p-2 sm:p-3 flex items-center justify-between">
                         <div class="flex items-center gap-2 sm:gap-4">
-                            <!-- Play/Pause -->
                             <button id="play-pause-btn" class="p-2 hover:bg-slate-700 rounded-full transition">
                                 <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                             </button>
-                            
-                            <!-- Time Display -->
                             <div class="text-[10px] sm:text-xs font-mono text-slate-300">
                                 <span id="current-time">0:00</span> / <span id="duration-time">0:00</span>
-                            </div>
-
-                            <!-- Volume Controls (Hidden on mobile sliders for space) -->
-                            <div class="hidden sm:flex items-center gap-2">
-                                <button id="mute-btn" class="p-2 hover:bg-slate-700 rounded-full transition">
-                                    <svg id="volume-high-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                                    <svg id="volume-mute-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                                </button>
-                                <input type="range" id="volume-slider" min="0" max="100" value="100" class="w-16 md:w-20 h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                             </div>
                         </div>
 
                         <div class="flex items-center gap-1 sm:gap-2">
-                            <!-- Speed Control -->
                             <div class="relative">
                                 <button id="speed-btn" class="p-2 hover:bg-slate-700 rounded-lg transition text-[10px] sm:text-xs font-bold flex items-center gap-1">
                                     <span id="current-speed">1x</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
-                                <div id="speed-menu" class="absolute hidden right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 w-24">
-                                    <button onclick="setSpeed(0.5)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600 transition">0.5x</button>
-                                    <button onclick="setSpeed(1)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600 transition">1x (Normal)</button>
-                                    <button onclick="setSpeed(1.25)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600 transition">1.25x</button>
-                                    <button onclick="setSpeed(1.5)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600 transition">1.5x</button>
-                                    <button onclick="setSpeed(2)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600 transition">2x</button>
+                                <div id="speed-menu" class="absolute hidden bottom-full right-0 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 w-24 mb-2">
+                                    <button onclick="setSpeed(0.5)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600">0.5x</button>
+                                    <button onclick="setSpeed(1)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600">1x</button>
+                                    <button onclick="setSpeed(1.5)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600">1.5x</button>
+                                    <button onclick="setSpeed(2)" class="w-full text-left px-4 py-2 text-xs hover:bg-emerald-600">2x</button>
                                 </div>
                             </div>
-
-                            <!-- Fullscreen -->
                             <button id="fullscreen-btn" class="p-2 hover:bg-slate-700 rounded-full transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                                </svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="details-card bg-white p-5 sm:p-8 rounded-b-2xl border border-slate-200 shadow-sm !mt-6 sm:!mt-8">
+                <div class="bg-white p-5 sm:p-8 rounded-b-2xl border border-slate-200 shadow-sm !mt-6 sm:!mt-8">
                     <h1 id="lesson-title" class="text-xl sm:text-2xl font-bold text-slate-900 mb-4">Course Content</h1>
                     <div id="attachment-area" class="border-t border-slate-100 pt-6"></div>
                 </div>
             </div>
         </main>
-    </div>
-
-    <!-- Error Overlay -->
-    <div id="setup-error" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-white p-6 rounded-xl max-w-md w-full shadow-2xl">
-            <h2 class="text-xl font-bold text-red-600 mb-2">Configuration Error</h2>
-            <p id="error-desc" class="text-slate-600 mb-4 text-sm"></p>
-            <p class="text-xs text-slate-400 bg-slate-50 p-3 rounded">Please verify your API settings and spreadsheet access permissions.</p>
-        </div>
     </div>
 
     <script>
@@ -289,34 +214,15 @@
 
         let supabaseClient;
         let ytPlayer;
-        let isPlayerReady = false;
         let progressInterval;
-
-        // YouTube API ready callback
-        function onYouTubeIframeAPIReady() {
-            isPlayerReady = true;
-        }
-
-        function validateConfig() {
-            const isPlaceholder = (val) => !val || val === '' || (typeof val === 'string' && (val.includes('your-') || val.includes('YOUR_')));
-            if (isPlaceholder(CONFIG.SUPABASE_URL) || isPlaceholder(CONFIG.SUPABASE_ANON_KEY)) {
-                const errorBox = document.getElementById('setup-error');
-                const errorDesc = document.getElementById('error-desc');
-                errorDesc.textContent = "Supabase credentials appear to be missing or incorrect.";
-                errorBox.classList.remove('hidden');
-                return false;
-            }
-            return true;
-        }
+        let watermarkInterval;
 
         async function init() {
-            if (!validateConfig()) return;
-
             try {
                 supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-                const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                const { data: { session } } = await supabaseClient.auth.getSession();
                 
-                if (sessionError || !session) {
+                if (!session) {
                     window.location.assign('login.html');
                     return;
                 }
@@ -329,9 +235,28 @@
                 await loadSheetData();
                 setupCustomControls();
             } catch (err) {
-                console.error("Initialization error:", err);
+                console.error("Init error:", err);
                 window.location.assign('login.html');
             }
+        }
+
+        function moveWatermark() {
+            const watermark = document.getElementById('watermark-overlay');
+            const wrapper = document.getElementById('player-wrapper');
+            if (!watermark || !wrapper || watermark.classList.contains('hidden')) return;
+
+            const maxX = wrapper.clientWidth - watermark.clientWidth - 20;
+            const maxY = wrapper.clientHeight - watermark.clientHeight - 20;
+
+            const randomX = Math.max(10, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(10, Math.floor(Math.random() * maxY));
+
+            watermark.style.left = `${randomX}px`;
+            watermark.style.top = `${randomY}px`;
+        }
+
+        function onYouTubeIframeAPIReady() {
+            // Global hook for YT API
         }
 
         function formatTime(seconds) {
@@ -354,8 +279,6 @@
 
         function setupCustomControls() {
             const playPauseBtn = document.getElementById('play-pause-btn');
-            const muteBtn = document.getElementById('mute-btn');
-            const volSlider = document.getElementById('volume-slider');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const speedBtn = document.getElementById('speed-btn');
             const speedMenu = document.getElementById('speed-menu');
@@ -364,30 +287,7 @@
             playPauseBtn.onclick = () => {
                 if (!ytPlayer) return;
                 const state = ytPlayer.getPlayerState();
-                if (state === 1) { // playing
-                    ytPlayer.pauseVideo();
-                } else {
-                    ytPlayer.playVideo();
-                }
-            };
-
-            muteBtn.onclick = () => {
-                if (!ytPlayer) return;
-                if (ytPlayer.isMuted()) {
-                    ytPlayer.unMute();
-                } else {
-                    ytPlayer.mute();
-                }
-                updateVolumeUI();
-            };
-
-            volSlider.oninput = (e) => {
-                if (!ytPlayer) return;
-                ytPlayer.setVolume(e.target.value);
-                if (e.target.value > 0 && ytPlayer.isMuted()) {
-                    ytPlayer.unMute();
-                }
-                updateVolumeUI();
+                state === 1 ? ytPlayer.pauseVideo() : ytPlayer.playVideo();
             };
 
             progressContainer.onclick = (e) => {
@@ -399,13 +299,8 @@
 
             fullscreenBtn.onclick = () => {
                 const elem = document.getElementById('video-section');
-                if (!document.fullscreenElement) {
-                    elem.requestFullscreen().catch(err => {
-                        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-                    });
-                } else {
-                    document.exitFullscreen();
-                }
+                if (!document.fullscreenElement) elem.requestFullscreen();
+                else document.exitFullscreen();
             };
 
             speedBtn.onclick = (e) => {
@@ -413,59 +308,25 @@
                 speedMenu.classList.toggle('hidden');
             };
 
-            document.addEventListener('click', () => {
-                speedMenu.classList.add('hidden');
-            });
+            document.addEventListener('click', () => speedMenu.classList.add('hidden'));
         }
 
         window.setSpeed = (rate) => {
             if (!ytPlayer) return;
             ytPlayer.setPlaybackRate(rate);
             document.getElementById('current-speed').textContent = rate + 'x';
-            document.getElementById('speed-menu').classList.add('hidden');
         };
-
-        function updateVolumeUI() {
-            const volHigh = document.getElementById('volume-high-icon');
-            const volMute = document.getElementById('volume-mute-icon');
-            if (ytPlayer.isMuted() || ytPlayer.getVolume() === 0) {
-                volHigh.classList.add('hidden');
-                volMute.classList.remove('hidden');
-            } else {
-                volHigh.classList.remove('hidden');
-                volMute.classList.add('hidden');
-            }
-        }
 
         async function loadSheetData() {
             const urlParams = new URLSearchParams(window.location.search);
             const courseId = urlParams.get('id');
-            if (!courseId) { 
-                window.location.assign('course.html'); 
-                return; 
-            }
+            if (!courseId) { window.location.assign('course.html'); return; }
 
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${CONFIG.RANGE}?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
-            
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error.message);
-                if (!data.values) throw new Error("No data found in the spreadsheet.");
-
-                const filtered = data.values.slice(1).filter(row => row[0] == courseId);
-                
-                if (filtered.length === 0) {
-                    document.getElementById('curriculum-list').innerHTML = `<p class="p-4 text-slate-400 text-sm">No lessons available for this course ID (${courseId}).</p>`;
-                    return;
-                }
-
-                renderCurriculum(filtered);
-            } catch (err) {
-                console.error("Sheets error:", err);
-                document.getElementById('curriculum-list').innerHTML = `<p class="p-4 text-red-400 text-xs">Error: ${err.message}</p>`;
-            }
+            const res = await fetch(url);
+            const data = await res.json();
+            const filtered = data.values.slice(1).filter(row => row[0] == courseId);
+            renderCurriculum(filtered);
         }
 
         function renderCurriculum(data) {
@@ -477,11 +338,11 @@
                 sections[sName].push(row);
             });
 
-            container.innerHTML = Object.entries(sections).map(([name, lessons], idx) => `
+            container.innerHTML = Object.entries(sections).map(([name, lessons]) => `
                 <div class="border border-slate-200 rounded-lg overflow-hidden">
                     <button class="w-full p-4 bg-slate-50 font-bold text-slate-700 text-sm flex justify-between items-center" onclick="this.nextElementSibling.classList.toggle('hidden')">
                         <span>${name}</span>
-                        <span class="text-slate-400 text-lg">+</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div class="flex flex-col divide-y divide-slate-100 hidden">
                         ${lessons.map(l => `
@@ -502,39 +363,31 @@
             const controlBar = document.getElementById('custom-player-controls');
             
             let vid = '';
-            try {
-                if (url && url.includes('v=')) vid = url.split('v=')[1].split('&')[0];
-                else if (url && url.includes('be/')) vid = url.split('be/')[1].split('?')[0];
-                else if (url && url.includes('embed/')) vid = url.split('embed/')[1].split('?')[0];
-            } catch (e) { console.error("URL Parsing error", e); }
+            if (url.includes('v=')) vid = url.split('v=')[1].split('&')[0];
+            else if (url.includes('be/')) vid = url.split('be/')[1].split('?')[0];
 
             if (vid) {
-                if (ytPlayer) {
-                    ytPlayer.loadVideoById(vid);
-                } else {
+                if (ytPlayer) ytPlayer.loadVideoById(vid);
+                else {
                     ytPlayer = new YT.Player('main-player', {
-                        height: '100%',
-                        width: '100%',
-                        videoId: vid,
-                        playerVars: {
-                            'autoplay': 1,
-                            'controls': 0,
-                            'rel': 0,
-                            'modestbranding': 1,
-                            'disablekb': 1,
-                            'iv_load_policy': 3
-                        },
+                        height: '100%', width: '100%', videoId: vid,
+                        playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'disablekb': 1 },
                         events: {
-                            'onReady': (event) => {
-                                event.target.playVideo();
-                                updateVolumeUI();
+                            'onReady': (e) => {
+                                e.target.playVideo();
                                 if (progressInterval) clearInterval(progressInterval);
                                 progressInterval = setInterval(updateProgressBar, 500);
+                                
+                                // Start moving watermark
+                                watermark.classList.remove('hidden');
+                                moveWatermark();
+                                if (watermarkInterval) clearInterval(watermarkInterval);
+                                watermarkInterval = setInterval(moveWatermark, 4000);
                             },
-                            'onStateChange': (event) => {
+                            'onStateChange': (e) => {
                                 const playIcon = document.getElementById('play-icon');
                                 const pauseIcon = document.getElementById('pause-icon');
-                                if (event.data === YT.PlayerState.PLAYING) {
+                                if (e.data === YT.PlayerState.PLAYING) {
                                     playIcon.classList.add('hidden');
                                     pauseIcon.classList.remove('hidden');
                                 } else {
@@ -545,31 +398,17 @@
                         }
                     });
                 }
-                
                 document.getElementById('main-player').classList.remove('hidden');
                 placeholder.classList.add('hidden');
-                watermark.classList.remove('hidden');
                 protectionLayer.classList.remove('hidden');
                 controlBar.classList.remove('hidden');
-                
-                // On mobile, scroll to top of video when a lesson is clicked
-                if (window.innerWidth < 1024) {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            } else {
-                alert("Could not parse YouTube URL.");
+                if (window.innerWidth < 1024) window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
             document.getElementById('lesson-title').textContent = title;
             document.getElementById('attachment-area').innerHTML = (attach && attach !== 'undefined' && attach !== '') ? 
-                `<div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <span class="text-sm text-slate-500 font-medium">Resources:</span>
-                    <a href="${attach}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-3 sm:py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 w-full sm:w-auto">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        Download Files
-                    </a>
-                </div>` : 
-                `<span class="text-slate-400 text-xs italic">No additional resources for this lesson.</span>`;
+                `<a href="${attach}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 w-full sm:w-auto">Download Resources</a>` : 
+                `<span class="text-slate-400 text-xs italic">No additional resources.</span>`;
         };
 
         window.addEventListener('DOMContentLoaded', init);
