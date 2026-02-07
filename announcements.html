@@ -51,7 +51,7 @@
         <div class="mb-8 flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Recent Updates</h1>
-                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Stay informed about upcoming live sessions and changes.</p>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Stay informed about upcoming sessions and official news.</p>
             </div>
             <button onclick="fetchAnnouncements()" class="p-2 text-slate-400 hover:text-emerald-500 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -74,7 +74,7 @@
             SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0',
             GOOGLE_SHEETS_API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM', 
             SPREADSHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM', 
-            RANGE: 'Sheet1!A:E' // Updated to fetch from Sheet1
+            RANGE: 'Sheet1!A:C' 
         };
 
         const themeBtn = document.getElementById('theme-toggle');
@@ -94,18 +94,15 @@
         };
         updateIcons();
 
-        // 1. Check Authentication first
         async function checkAuth() {
             const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
             const { data: { session }, error } = await supabaseClient.auth.getSession();
             
             if (error || !session) {
-                // If not logged in, redirect to login
                 window.location.assign('login.html');
                 return;
             }
 
-            // If logged in, show content and fetch data
             document.getElementById('main-content').classList.replace('opacity-0', 'opacity-100');
             fetchAnnouncements();
         }
@@ -123,40 +120,28 @@
                     return;
                 }
 
-                // Reverse to show latest first (assuming latest is at the bottom of the sheet)
+                // Reverse to show latest first
                 const rows = data.values.slice(1).reverse();
                 container.innerHTML = '';
 
                 rows.forEach((row, index) => {
-                    const [id, title, date, time, link] = row;
+                    const [title, content, date] = row;
                     const isLatest = index === 0;
                     
                     const card = document.createElement('div');
-                    card.className = `p-6 rounded-xl border bg-white dark:bg-slate-900 transition-all duration-300 ${isLatest ? 'latest-card border-emerald-500/30 ring-1 ring-emerald-500/10' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`;
+                    card.className = `p-6 rounded-xl border bg-white dark:bg-slate-900 transition-all duration-300 ${isLatest ? 'latest-card border-emerald-500/30 ring-1 ring-emerald-500/10' : 'border-slate-200 dark:border-slate-800'}`;
                     
                     card.innerHTML = `
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div class="flex-grow">
-                                <div class="flex items-center gap-2 mb-2">
-                                    ${isLatest ? '<span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold rounded uppercase tracking-wider flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full pulse-dot"></span> Newest</span>' : ''}
-                                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Update</span>
-                                </div>
-                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">${title || 'No Title'}</h3>
-                                <div class="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
-                                    <div class="flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                        ${date || 'N/A'}
-                                    </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        ${time || 'N/A'}
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="flex flex-col gap-3">
                             <div class="flex items-center gap-2">
-                                <a href="live.html?id=${id}" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 transition whitespace-nowrap">
-                                    View Details
-                                </a>
+                                ${isLatest ? '<span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold rounded uppercase tracking-wider flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full pulse-dot"></span> Newest</span>' : ''}
+                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Official Update</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white">${title || 'Announcement'}</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-line">${content || 'No content provided.'}</p>
+                            <div class="pt-3 border-t border-slate-50 dark:border-slate-800 flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <span>Published: ${date || 'N/A'}</span>
                             </div>
                         </div>
                     `;
@@ -169,7 +154,6 @@
             }
         }
 
-        // Start auth check on load
         window.onload = checkAuth;
     </script>
 </body>
