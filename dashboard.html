@@ -177,11 +177,18 @@
                     document.getElementById('live-schedule-list').innerHTML = allSessions.slice(0, 5).map(s => {
                         const sDate = new Date(`${s[2]} ${s[3]}`);
                         const isLive = Math.abs(now - sDate) < (60 * 60 * 1000); // within an hour
+                        
+                        // Format: DD/MM/YYYY
+                        const day = sDate.getDate().toString().padStart(2, '0');
+                        const month = (sDate.getMonth() + 1).toString().padStart(2, '0');
+                        const year = sDate.getFullYear();
+                        const formattedDate = `${day}/${month}/${year}`;
+
                         return `
                         <div class="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
-                            <div class="text-center min-w-[50px]">
-                                <p class="text-[10px] font-bold uppercase text-slate-400">${sDate.toLocaleDateString('en-US', {month: 'short'})}</p>
-                                <p class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">${sDate.getDate()}</p>
+                            <div class="text-center min-w-[70px]">
+                                <p class="text-[10px] font-bold uppercase text-slate-400">Date</p>
+                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-none">${formattedDate}</p>
                             </div>
                             <div class="flex-grow">
                                 <h4 class="font-bold text-slate-800 dark:text-white text-sm">${s[1]}</h4>
