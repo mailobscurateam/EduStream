@@ -48,32 +48,56 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <section id="hero-countdown" class="relative bg-emerald-900 rounded-3xl p-8 md:p-12 mb-10 text-white hidden">
+        <!-- Live Countdown Hero -->
+        <section id="hero-countdown" class="relative bg-emerald-900 rounded-3xl p-8 md:p-12 mb-10 text-white hidden overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
             <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
-                <div>
-                    <span class="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-xs font-bold uppercase mb-4">Upcoming Live Session</span>
-                    <h1 id="next-live-title" class="text-3xl md:text-4xl font-bold mb-4">...</h1>
-                    <a id="join-now-btn" href="live.html" class="inline-flex items-center px-6 py-3 bg-white text-emerald-900 font-bold rounded-xl hover:bg-emerald-50 transition">Join Session</a>
+                <div class="text-center lg:text-left">
+                    <span class="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-xs font-bold uppercase mb-4 tracking-widest">Upcoming Live Session</span>
+                    <h1 id="next-live-title" class="text-3xl md:text-4xl font-bold mb-4">Finding next session...</h1>
+                    <p id="next-live-details" class="text-emerald-100/70 mb-6 text-sm">Get ready to learn live with your instructors.</p>
+                    <a id="join-now-btn" href="live.html" class="inline-flex items-center px-8 py-4 bg-white text-emerald-900 font-bold rounded-2xl hover:bg-emerald-50 transform hover:scale-105 transition shadow-lg">
+                        Join Now
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </a>
                 </div>
-                <div class="flex gap-3" id="countdown-timer">
-                    <div class="countdown-item"><span id="days" class="text-2xl font-bold">00</span><span class="text-[10px] uppercase">Days</span></div>
-                    <div class="countdown-item"><span id="hours" class="text-2xl font-bold">00</span><span class="text-[10px] uppercase">Hours</span></div>
-                    <div class="countdown-item"><span id="minutes" class="text-2xl font-bold">00</span><span class="text-[10px] uppercase">Mins</span></div>
-                    <div class="countdown-item"><span id="seconds" class="text-2xl font-bold">00</span><span class="text-[10px] uppercase">Secs</span></div>
+                <div class="flex gap-3 md:gap-4" id="countdown-timer">
+                    <div class="countdown-item shadow-xl"><span id="days" class="text-2xl md:text-3xl font-bold">00</span><span class="text-[10px] uppercase font-semibold">Days</span></div>
+                    <div class="countdown-item shadow-xl"><span id="hours" class="text-2xl md:text-3xl font-bold">00</span><span class="text-[10px] uppercase font-semibold">Hours</span></div>
+                    <div class="countdown-item shadow-xl"><span id="minutes" class="text-2xl md:text-3xl font-bold">00</span><span class="text-[10px] uppercase font-semibold">Mins</span></div>
+                    <div class="countdown-item shadow-xl"><span id="seconds" class="text-2xl md:text-3xl font-bold">00</span><span class="text-[10px] uppercase font-semibold">Secs</span></div>
                 </div>
             </div>
         </section>
 
+        <!-- Stats Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
-                <div class="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg></div>
-                <div><p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Courses</p><p id="stat-courses" class="text-xl font-bold text-slate-800 dark:text-white">0</p></div>
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-transform hover:scale-[1.02]">
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Available Courses</p>
+                    <p id="stat-courses" class="text-xl font-bold text-slate-800 dark:text-white">0</p>
+                </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div id="featured-courses-list" class="space-y-4"></div>
-            <div id="live-schedule-list" class="space-y-4"></div>
+            <div class="space-y-6">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    Featured Courses
+                </h2>
+                <div id="featured-courses-list" class="space-y-4"></div>
+            </div>
+            <div class="space-y-6">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Live Schedule
+                </h2>
+                <div id="live-schedule-list" class="space-y-4"></div>
+            </div>
         </div>
     </main>
 
@@ -112,38 +136,97 @@
         async function loadData() {
             try {
                 const sheetUrl = (range) => `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${range}?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
-                const [coursesRes, liveRes] = await Promise.all([fetch(sheetUrl('Sheet2!A:E')), fetch(sheetUrl('Live!A:E'))]);
+                const [coursesRes, liveRes] = await Promise.all([
+                    fetch(sheetUrl('Sheet2!A:E')), 
+                    fetch(sheetUrl('Live!A:E'))
+                ]);
+                
                 const cData = await coursesRes.json();
                 const lData = await liveRes.json();
 
+                // Load Courses
                 if (cData.values) {
                     document.getElementById('stat-courses').textContent = cData.values.length - 1;
                     document.getElementById('featured-courses-list').innerHTML = cData.values.slice(1, 4).map(c => `
-                        <a href="singlecourse.html?id=${c[0]}" class="flex items-center gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-600 transition">
-                            <img src="${c[3]}" class="w-16 h-16 rounded-xl object-cover">
-                            <div><h4 class="font-bold text-slate-800 dark:text-white">${c[1]}</h4><p class="text-xs text-slate-500">${c[2]}</p></div>
+                        <a href="singlecourse.html?id=${c[0]}" class="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-600 group transition shadow-sm">
+                            <img src="${c[3]}" class="w-16 h-16 rounded-xl object-cover shadow-sm">
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 transition">${c[1]}</h4>
+                                <p class="text-xs text-slate-500">${c[2]}</p>
+                            </div>
+                            <svg class="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                         </a>`).join('');
                 }
                 
+                // Load Live Schedule and Nearest
                 if (lData.values && lData.values.length > 1) {
-                    const nearest = lData.values.slice(1).find(s => new Date(`${s[2]} ${s[3]}`) > new Date());
-                    if (nearest) setupCountdown(nearest);
+                    const now = new Date();
+                    const allSessions = lData.values.slice(1);
+                    
+                    // Filter future sessions and sort by proximity
+                    const futureSessions = allSessions
+                        .map(s => ({ data: s, date: new Date(`${s[2]} ${s[3]}`) }))
+                        .filter(s => s.date > now)
+                        .sort((a, b) => a.date - b.date);
+
+                    if (futureSessions.length > 0) {
+                        setupCountdown(futureSessions[0].data);
+                    }
+
+                    // Display all live schedules
+                    document.getElementById('live-schedule-list').innerHTML = allSessions.slice(0, 5).map(s => {
+                        const sDate = new Date(`${s[2]} ${s[3]}`);
+                        const isLive = Math.abs(now - sDate) < (60 * 60 * 1000); // within an hour
+                        return `
+                        <div class="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                            <div class="text-center min-w-[50px]">
+                                <p class="text-[10px] font-bold uppercase text-slate-400">${sDate.toLocaleDateString('en-US', {month: 'short'})}</p>
+                                <p class="text-lg font-bold text-slate-700 dark:text-slate-200 leading-none">${sDate.getDate()}</p>
+                            </div>
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-slate-800 dark:text-white text-sm">${s[1]}</h4>
+                                <p class="text-xs text-slate-500">${s[3]}</p>
+                            </div>
+                            ${isLive ? '<span class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 text-[10px] font-bold rounded-full animate-pulse">LIVE</span>' : ''}
+                        </div>`;
+                    }).join('');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error("Dashboard data load error:", err); 
+            }
         }
 
         function setupCountdown(s) {
             const hero = document.getElementById('hero-countdown');
+            const joinBtn = document.getElementById('join-now-btn');
+            
             hero.classList.remove('hidden');
             document.getElementById('next-live-title').textContent = s[1];
+            
+            // Set link to specific live course id if available
+            joinBtn.href = `live.html?id=${s[0]}`;
+            
             const sessionDate = new Date(`${s[2]} ${s[3]}`);
-            setInterval(() => {
+            
+            const timer = setInterval(() => {
                 const diff = sessionDate - new Date();
-                if (diff <= 0) return;
-                document.getElementById('days').textContent = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
-                document.getElementById('hours').textContent = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
-                document.getElementById('minutes').textContent = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
-                document.getElementById('seconds').textContent = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+                
+                if (diff <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('next-live-details').textContent = "Session is starting now!";
+                    document.getElementById('countdown-timer').classList.add('opacity-50');
+                    return;
+                }
+                
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const m = Math.floor((diff / 1000 / 60) % 60);
+                const s_val = Math.floor((diff / 1000) % 60);
+
+                document.getElementById('days').textContent = d.toString().padStart(2, '0');
+                document.getElementById('hours').textContent = h.toString().padStart(2, '0');
+                document.getElementById('minutes').textContent = m.toString().padStart(2, '0');
+                document.getElementById('seconds').textContent = s_val.toString().padStart(2, '0');
             }, 1000);
         }
 
@@ -151,6 +234,7 @@
             await supabaseClient.auth.signOut();
             window.location.assign('login.html');
         }
+        
         window.onload = init;
     </script>
 </body>
