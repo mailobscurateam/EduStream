@@ -58,6 +58,11 @@
             z-index: 50;
         }
 
+        /* Hide resources and title when in fullscreen */
+        #video-section:fullscreen .lesson-info-card {
+            display: none;
+        }
+
         /* Moving Watermark Styling */
         .watermark {
             position: absolute;
@@ -195,7 +200,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-5 sm:p-8 rounded-b-2xl border border-slate-200 shadow-sm !mt-6 sm:!mt-8">
+                <div class="lesson-info-card bg-white p-5 sm:p-8 rounded-b-2xl border border-slate-200 shadow-sm !mt-6 sm:!mt-8">
                     <h1 id="lesson-title" class="text-xl sm:text-2xl font-bold text-slate-900 mb-4">Course Content</h1>
                     <div id="attachment-area" class="border-t border-slate-100 pt-6"></div>
                 </div>
