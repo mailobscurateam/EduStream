@@ -82,11 +82,15 @@
             pointer-events: none;
             opacity: 0.25;
             color: white;
-            font-size: 1.1rem;
+            font-size: 0.8rem;
             font-weight: bold;
             text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
             z-index: 30;
             user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .watermark { font-size: 1.1rem; }
         }
 
         /* Custom Controls Styling */
@@ -106,14 +110,15 @@
         /* Progress Bar Styling */
         .progress-container {
             width: 100%;
-            height: 4px;
+            height: 6px;
             background: rgba(255,255,255,0.2);
             cursor: pointer;
             position: relative;
             transition: height 0.1s ease;
         }
-        .progress-container:hover {
-            height: 6px;
+        @media (min-width: 768px) {
+            .progress-container { height: 4px; }
+            .progress-container:hover { height: 6px; }
         }
         #progress-bar {
             height: 100%;
@@ -131,40 +136,62 @@
             height: 12px;
             background: #10b981;
             border-radius: 50%;
-            opacity: 0;
+            opacity: 1;
             transition: opacity 0.1s ease;
         }
-        .progress-container:hover #progress-bar::after {
-            opacity: 1;
+        @media (min-width: 768px) {
+            #progress-bar::after { opacity: 0; }
+            .progress-container:hover #progress-bar::after { opacity: 1; }
+        }
+
+        /* Responsive Mobile Layout Fixes */
+        @media (max-width: 1023px) {
+            #app-content {
+                height: auto;
+                flex-direction: column-reverse;
+            }
+            aside {
+                height: auto;
+                max-height: 500px;
+                border-r: 0;
+                border-t: 1px solid #e2e8f0;
+            }
+            main {
+                padding: 1rem;
+            }
         }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-    <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-50">
-        <div class="flex items-center gap-4">
+    <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50">
+        <div class="flex items-center gap-3">
             <a href="course.html" class="text-slate-500 hover:text-slate-800 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </a>
-            <span class="text-xl font-bold text-emerald-600">EduStream</span>
+            <span class="text-lg sm:text-xl font-bold text-emerald-600 truncate max-w-[120px] sm:max-w-none">EduStream</span>
         </div>
         <div class="flex items-center text-slate-600 gap-2">
-            <span id="user-phone" class="font-mono bg-slate-100 px-2 py-1 rounded text-sm tracking-tighter">Authenticating...</span>
+            <span id="user-phone" class="font-mono bg-slate-100 px-2 py-1 rounded text-[10px] sm:text-sm tracking-tighter">Authenticating...</span>
         </div>
     </header>
 
     <div id="app-content" class="flex flex-col lg:flex-row h-[calc(100vh-64px)] hidden">
-        <aside class="w-full lg:w-96 bg-white border-r border-slate-200 flex flex-col h-full">
-            <div class="p-4 border-b border-slate-100"><h2 class="font-bold text-slate-800 uppercase text-xs tracking-widest">Curriculum</h2></div>
-            <div id="curriculum-list" class="flex-grow curriculum-scroll overflow-y-auto p-4 space-y-4"></div>
+        <aside class="w-full lg:w-80 xl:w-96 bg-white lg:border-r border-slate-200 flex flex-col h-full overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="font-bold text-slate-800 uppercase text-xs tracking-widest">Curriculum</h2>
+                <span class="lg:hidden text-[10px] bg-slate-100 px-2 py-1 rounded font-bold text-slate-500">Scroll Down for Lessons</span>
+            </div>
+            <div id="curriculum-list" class="flex-grow curriculum-scroll overflow-y-auto p-4 space-y-4 pb-20 lg:pb-4"></div>
         </aside>
 
-        <main class="flex-grow overflow-y-auto p-6 lg:p-10">
+        <main class="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-10">
             <div id="video-section" class="max-w-5xl mx-auto space-y-0">
                 <!-- Enhanced Video Container with Protection Layer -->
-                <div class="video-wrapper shadow-2xl">
-                    <div id="video-placeholder" class="absolute inset-0 z-10 flex items-center justify-center text-slate-400 font-medium bg-slate-900">
-                        Select a lesson to begin
+                <div class="video-wrapper shadow-xl md:shadow-2xl">
+                    <div id="video-placeholder" class="absolute inset-0 z-10 flex flex-col items-center justify-center text-slate-400 font-medium bg-slate-900 p-6 text-center">
+                        <svg class="w-12 h-12 mb-3 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <span class="text-sm">Select a lesson from the curriculum below to start learning</span>
                     </div>
                     
                     <!-- Watermark -->
@@ -185,8 +212,8 @@
                         <div id="progress-bar"></div>
                     </div>
 
-                    <div class="p-3 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
+                    <div class="p-2 sm:p-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2 sm:gap-4">
                             <!-- Play/Pause -->
                             <button id="play-pause-btn" class="p-2 hover:bg-slate-700 rounded-full transition">
                                 <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -194,24 +221,24 @@
                             </button>
                             
                             <!-- Time Display -->
-                            <div class="text-xs font-mono text-slate-300">
+                            <div class="text-[10px] sm:text-xs font-mono text-slate-300">
                                 <span id="current-time">0:00</span> / <span id="duration-time">0:00</span>
                             </div>
 
-                            <!-- Volume Controls -->
-                            <div class="flex items-center gap-2">
+                            <!-- Volume Controls (Hidden on mobile sliders for space) -->
+                            <div class="hidden sm:flex items-center gap-2">
                                 <button id="mute-btn" class="p-2 hover:bg-slate-700 rounded-full transition">
                                     <svg id="volume-high-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                                     <svg id="volume-mute-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                                 </button>
-                                <input type="range" id="volume-slider" min="0" max="100" value="100" class="w-20 h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                                <input type="range" id="volume-slider" min="0" max="100" value="100" class="w-16 md:w-20 h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1 sm:gap-2">
                             <!-- Speed Control -->
                             <div class="relative">
-                                <button id="speed-btn" class="p-2 hover:bg-slate-700 rounded-lg transition text-xs font-bold flex items-center gap-1">
+                                <button id="speed-btn" class="p-2 hover:bg-slate-700 rounded-lg transition text-[10px] sm:text-xs font-bold flex items-center gap-1">
                                     <span id="current-speed">1x</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
@@ -234,8 +261,8 @@
                     </div>
                 </div>
 
-                <div class="details-card bg-white p-8 rounded-b-2xl border border-slate-200 shadow-sm !mt-8">
-                    <h1 id="lesson-title" class="text-2xl font-bold text-slate-900 mb-4">Course Content</h1>
+                <div class="details-card bg-white p-5 sm:p-8 rounded-b-2xl border border-slate-200 shadow-sm !mt-6 sm:!mt-8">
+                    <h1 id="lesson-title" class="text-xl sm:text-2xl font-bold text-slate-900 mb-4">Course Content</h1>
                     <div id="attachment-area" class="border-t border-slate-100 pt-6"></div>
                 </div>
             </div>
@@ -524,15 +551,20 @@
                 watermark.classList.remove('hidden');
                 protectionLayer.classList.remove('hidden');
                 controlBar.classList.remove('hidden');
+                
+                // On mobile, scroll to top of video when a lesson is clicked
+                if (window.innerWidth < 1024) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             } else {
                 alert("Could not parse YouTube URL.");
             }
 
             document.getElementById('lesson-title').textContent = title;
             document.getElementById('attachment-area').innerHTML = (attach && attach !== 'undefined' && attach !== '') ? 
-                `<div class="flex items-center gap-4">
+                `<div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <span class="text-sm text-slate-500 font-medium">Resources:</span>
-                    <a href="${attach}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                    <a href="${attach}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-3 sm:py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 w-full sm:w-auto">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Download Files
                     </a>
