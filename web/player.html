@@ -6,11 +6,17 @@
     <title>Playing Lesson | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
-        .video-container { aspect-ratio: 16 / 9; }
+        .video-container { aspect-ratio: 16 / 9; position: relative; overflow: hidden; }
+        
+        /* Custom Player Overlay to hide YouTube elements */
+        #player-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .yt-shield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
     </style>
     <script>
         tailwind.config = { 
@@ -56,11 +62,13 @@
         <main class="flex-1 overflow-y-auto custom-scrollbar">
             <div id="player-view" class="hidden">
                 <div id="media-slot" class="bg-black w-full video-container flex items-center justify-center relative group">
-                    <!-- Media content (Video or Iframe) injected here -->
-                    <video id="main-video" class="w-full h-full hidden" controls poster="">
-                        <source src="" type="video/mp4">
-                    </video>
-                    <iframe id="youtube-player" class="w-full h-full hidden" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <!-- Custom Video Player Container -->
+                    <div id="player-wrapper">
+                        <div id="custom-yt-player"></div>
+                    </div>
+                    
+                    <!-- Shield to prevent context menu and branding clicks -->
+                    <div class="yt-shield"></div>
                     
                     <!-- Loading Overlay -->
                     <div id="video-loader" class="absolute inset-0 bg-black flex items-center justify-center z-10">
@@ -97,7 +105,7 @@
 
             <div id="loading-overlay" class="h-full w-full flex flex-col items-center justify-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-                <p class="text-slate-500 font-medium">Loading content...</p>
+                <p class="text-slate-500 font-medium">Verifying authorization...</p>
             </div>
         </main>
 
@@ -121,6 +129,11 @@
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         let currentLessons = [];
         let currentCourse = null;
+        let ytPlayer = null;
+
+        // Simple obfuscation tools
+        const protect = (str) => btoa(str);
+        const unprotect = (str) => atob(str);
 
         async function init() {
             const courseId = sessionStorage.getItem('current_course_id');
@@ -185,13 +198,6 @@
             }).join('');
         }
 
-        function getYoutubeEmbedUrl(url) {
-            if (!url) return null;
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
-        }
-
         async function loadLesson(lessonId) {
             document.getElementById('player-view').classList.add('hidden');
             document.getElementById('loading-overlay').classList.remove('hidden');
@@ -206,30 +212,45 @@
             document.getElementById('lesson-title').textContent = lesson.title;
             document.getElementById('lesson-desc').textContent = lesson.description || 'No description provided.';
             
-            const videoEl = document.getElementById('main-video');
-            const youtubeEl = document.getElementById('youtube-player');
             const loader = document.getElementById('video-loader');
-            
             loader.classList.remove('hidden');
 
-            const youtubeUrl = getYoutubeEmbedUrl(lesson.video_url);
+            // Handling custom YouTube Player initialization
+            const rawId = lesson.video_url; // Expecting just the ID here now
+            const secureId = protect(rawId); 
 
-            if (youtubeUrl) {
-                // YouTube Embed
-                videoEl.classList.add('hidden');
-                videoEl.pause();
-                youtubeEl.classList.remove('hidden');
-                youtubeEl.src = youtubeUrl;
-                // Since iframes don't have a reliable 'loadeddata' like video tags, we hide loader on load
-                youtubeEl.onload = () => loader.classList.add('hidden');
+            // Initialize or update YouTube Player
+            if (ytPlayer) {
+                ytPlayer.loadVideoById(unprotect(secureId));
             } else {
-                // Direct Video URL
-                youtubeEl.classList.add('hidden');
-                youtubeEl.src = "";
-                videoEl.classList.remove('hidden');
-                videoEl.src = lesson.video_url || 'https://www.w3schools.com/html/mov_bbb.mp4'; 
-                videoEl.poster = currentCourse.thumbnail || '';
-                videoEl.onloadeddata = () => loader.classList.add('hidden');
+                // Wait for API if not ready
+                if (typeof YT !== 'undefined' && YT.Player) {
+                    ytPlayer = new YT.Player('custom-yt-player', {
+                        height: '100%',
+                        width: '100%',
+                        videoId: unprotect(secureId),
+                        playerVars: {
+                            'autoplay': 0,
+                            'controls': 1,
+                            'modestbranding': 1,
+                            'rel': 0,
+                            'showinfo': 0,
+                            'fs': 1,
+                            'disablekb': 1,
+                            'iv_load_policy': 3
+                        },
+                        events: {
+                            'onReady': (event) => loader.classList.add('hidden'),
+                            'onStateChange': (event) => {
+                                // You can track progress here
+                            }
+                        }
+                    });
+                } else {
+                    // Fallback if API hasn't loaded yet
+                    window.onYouTubeIframeAPIReady = () => loadLesson(lessonId);
+                    return;
+                }
             }
 
             const progress = ((idx + 1) / currentLessons.length) * 100;
@@ -262,6 +283,7 @@
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         };
 
+        // Initialize
         init();
     </script>
 </body>
