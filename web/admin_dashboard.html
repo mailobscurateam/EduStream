@@ -359,7 +359,7 @@
         }
 
         async function loadCourses() {
-            const { data } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+            const { data } = await supabaseClient.from('courses').select('*').order('updated_at', { ascending: false });
             const list = document.getElementById('course-list');
             list.innerHTML = data.map(course => `
                 <div onclick="selectCourse('${course.id}', '${course.title}')" 
@@ -395,7 +395,7 @@
         }
 
         async function loadEnrollments() {
-            const { data: enrollments } = await supabaseClient.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false });
+            const { data: enrollments } = await supabaseClient.from('enrollments').select('*, courses(title)').order('updated_at', { ascending: false });
             const tbody = document.getElementById('enrollment-tbody');
             
             tbody.innerHTML = enrollments.map(e => `
@@ -430,7 +430,7 @@
                 .from('profiles')
                 .select('*')
                 .eq('role', 'student')
-                .order('created_at', { ascending: false });
+                .order('updated_at', { ascending: false });
 
             const tbody = document.getElementById('students-tbody');
             if (error) {
@@ -456,7 +456,7 @@
                         <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Role: ${s.role}</p>
                     </td>
                     <td class="px-8 py-5 text-slate-500 text-xs">
-                        ${new Date(s.created_at).toLocaleDateString()}
+                        ${new Date(s.updated_at).toLocaleDateString()}
                     </td>
                     <td class="px-8 py-5 text-right">
                         <button onclick="alert('Management features for individual accounts coming soon.')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 rounded-lg transition text-[10px] font-black uppercase">Manage</button>
