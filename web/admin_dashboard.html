@@ -124,7 +124,12 @@
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-black uppercase tracking-tight">Courses</h3>
                     </div>
-                    <div id="course-list" class="space-y-3"></div>
+                    <div id="course-list" class="space-y-3">
+                        <div class="animate-pulse flex flex-col gap-3">
+                            <div class="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl"></div>
+                            <div class="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="lg:col-span-2 space-y-6">
@@ -209,7 +214,6 @@
     </div>
 
     <!-- Modals -->
-    <!-- Lesson Modal -->
     <div id="lesson-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6">
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeLessonModal()"></div>
         <div class="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 p-8">
@@ -275,14 +279,15 @@
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         let selectedCourseId = null;
+        let allCourses = [];
 
         async function checkAdmin() {
             try {
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 if (!user) { window.location.href = 'index.html'; return; }
 
-                const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-                if (!profile || profile.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+                const { data: profile, error } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+                if (error || !profile || profile.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
 
                 document.getElementById('auth-guard').style.display = 'none';
                 init();
@@ -291,7 +296,7 @@
 
         async function init() {
             loadStats();
-            loadCourses();
+            await loadCourses();
             loadEnrollments();
             loadStudents();
         }
@@ -307,16 +312,9 @@
             document.getElementById('page-title').textContent = titles[tab];
         }
 
-        document.getElementById('sidebar-toggle').onclick = () => {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('sidebar-collapsed');
-            document.getElementById('toggle-icon').style.transform = sidebar.classList.contains('sidebar-collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
-        };
-
         async function loadStats() {
             const { count: cCount } = await supabaseClient.from('courses').select('*', { count: 'exact', head: true });
             const { count: lCount } = await supabaseClient.from('lessons').select('*', { count: 'exact', head: true });
-            // Fetching specifically from the students table
             const { count: sCount } = await supabaseClient.from('students').select('*', { count: 'exact', head: true });
             const { data: eData } = await supabaseClient.from('enrollments').select('status');
 
@@ -327,20 +325,34 @@
             document.getElementById('stat-pending').textContent = pendingCount;
             
             const badge = document.getElementById('badge-pending');
-            if (pendingCount > 0) {
-                badge.textContent = pendingCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+            if (badge) {
+                if (pendingCount > 0) { badge.textContent = pendingCount; badge.classList.remove('hidden'); }
+                else { badge.classList.add('hidden'); }
             }
         }
 
         async function loadCourses() {
-            const { data } = await supabaseClient.from('courses').select('*').order('updated_at', { ascending: false });
-            document.getElementById('course-list').innerHTML = data.map(course => `
-                <div onclick="selectCourse('${course.id}', '${course.title}')" 
+            const { data, error } = await supabaseClient.from('courses').select('*');
+            if (error) {
+                console.error("Course fetch error:", error);
+                document.getElementById('course-list').innerHTML = `<p class="text-red-500 text-xs font-bold p-4">Error loading courses</p>`;
+                return;
+            }
+            allCourses = data || [];
+            renderCourseList();
+        }
+
+        function renderCourseList() {
+            const list = document.getElementById('course-list');
+            if (allCourses.length === 0) {
+                list.innerHTML = `<p class="text-slate-400 text-xs font-bold p-4 italic">No courses found</p>`;
+                return;
+            }
+            list.innerHTML = allCourses.map(course => `
+                <div onclick="selectCourse('${course.id}', '${course.title.replace(/'/g, "\\'")}')" 
                     class="p-4 rounded-2xl cursor-pointer border-2 transition-all ${selectedCourseId === course.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-transparent bg-white dark:bg-slate-900 shadow-sm hover:border-slate-200 dark:hover:border-slate-700'}">
                     <h4 class="font-black text-xs uppercase truncate">${course.title}</h4>
+                    <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">${course.category || 'Course'}</p>
                 </div>
             `).join('');
         }
@@ -351,13 +363,13 @@
             document.getElementById('no-course-selected').classList.add('hidden');
             document.getElementById('lesson-header').classList.remove('hidden');
             document.getElementById('lessons-table-container').classList.remove('hidden');
-            loadCourses();
+            renderCourseList();
             loadLessons();
         }
 
         async function loadLessons() {
             const { data } = await supabaseClient.from('lessons').select('*').eq('course_id', selectedCourseId).order('section', { ascending: true });
-            document.getElementById('lessons-tbody').innerHTML = data.map(lesson => `
+            document.getElementById('lessons-tbody').innerHTML = (data || []).map(lesson => `
                 <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/30">
                     <td class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase">${lesson.section || '-'}</td>
                     <td class="px-6 py-4 font-bold text-sm">${lesson.title}</td>
@@ -371,7 +383,7 @@
 
         async function loadEnrollments() {
             const { data } = await supabaseClient.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false });
-            document.getElementById('enrollment-tbody').innerHTML = data.map(e => `
+            document.getElementById('enrollment-tbody').innerHTML = (data || []).map(e => `
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                     <td class="px-8 py-5 text-slate-500 font-mono text-xs">${e.user_id.substring(0, 12)}...</td>
                     <td class="px-8 py-5 text-slate-700 dark:text-slate-200">${e.courses?.title || 'Unknown Course'}</td>
@@ -393,12 +405,11 @@
         }
 
         async function loadStudents() {
-            // Fetching specifically from the students table as requested
             const { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
             const tbody = document.getElementById('students-tbody');
             if (error) { tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">Error: ${error.message}</td></tr>`; return; }
 
-            tbody.innerHTML = data.map(s => `
+            tbody.innerHTML = (data || []).map(s => `
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                     <td class="px-8 py-5">
                         <div class="flex items-center gap-3">
@@ -414,7 +425,7 @@
                         <button onclick="alert('Student ID: ${s.id}')" class="text-xs font-bold text-emerald-600 hover:underline">Details</button>
                     </td>
                 </tr>
-            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No student records found in table.</td></tr>`;
+            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No student records found.</td></tr>`;
             loadStats();
         }
 
@@ -460,7 +471,14 @@
             if (confirm('Delete lesson?')) { await supabaseClient.from('lessons').delete().eq('id', id); loadLessons(); loadStats(); }
         }
 
+        document.getElementById('sidebar-toggle').onclick = () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-collapsed');
+            document.getElementById('toggle-icon').style.transform = sidebar.classList.contains('sidebar-collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
+        };
+
         document.getElementById('theme-toggle').onclick = () => document.documentElement.classList.toggle('dark');
+        
         checkAdmin();
     </script>
 </body>
