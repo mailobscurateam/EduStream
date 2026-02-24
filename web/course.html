@@ -29,7 +29,6 @@
             }
         };
         
-        // Immediate theme application to prevent flash
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -124,48 +123,88 @@
                     return;
                 }
 
-                // Update Avatar
-                const userInitial = session.user.email.charAt(0).toUpperCase();
-                document.getElementById('user-avatar').textContent = userInitial;
+                document.getElementById('user-avatar').textContent = session.user.email.charAt(0).toUpperCase();
 
-                // 2. Fetch from Supabase 'courses' table
-                const { data: courses, error: fetchError } = await supabaseClient
-                    .from('courses')
-                    .select('*');
+                // 2. Fetch courses AND user enrollments to check status
+                const [coursesRes, enrollmentsRes] = await Promise.all([
+                    supabaseClient.from('courses').select('*'),
+                    supabaseClient.from('enrollments').select('course_id, status').eq('user_id', session.user.id)
+                ]);
 
-                if (fetchError) throw fetchError;
+                if (coursesRes.error) throw coursesRes.error;
+                
+                const courses = coursesRes.data;
+                const enrollments = enrollmentsRes.data || [];
+                
+                // Map enrollment status to course ID for easy lookup
+                const enrollmentMap = enrollments.reduce((acc, curr) => {
+                    acc[curr.course_id] = curr.status;
+                    return acc;
+                }, {});
 
                 // 3. Render
                 if (courses && courses.length > 0) {
-                    gridEl.innerHTML = courses.map(course => `
-                        <div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                            <div class="relative overflow-hidden aspect-video">
-                                <img src="${course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80'}" 
-                                     alt="${course.title}" 
-                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                <div class="absolute top-3 left-3">
-                                    <span class="px-3 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-xs font-bold rounded-full text-emerald-600 shadow-sm border border-slate-100 dark:border-slate-800">
-                                        ${course.category || 'Professional'}
-                                    </span>
+                    gridEl.innerHTML = courses.map(course => {
+                        const status = enrollmentMap[course.id];
+                        const isPending = status === 'pending_approval';
+                        
+                        // Define button and status badge based on state
+                        let actionButton = `
+                            <a href="singlecourse.html?id=${course.id}" 
+                               class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-emerald-600/20">
+                                Enroll Now
+                            </a>
+                        `;
+
+                        if (isPending) {
+                            actionButton = `
+                                <a href="checkout.html?course_id=${course.id}" 
+                                   class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                    Complete Payment
+                                </a>
+                            `;
+                        } else if (status === 'active') {
+                            actionButton = `
+                                <a href="player.html?id=${course.id}" 
+                                   class="px-5 py-2.5 bg-slate-800 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold text-sm transition-colors">
+                                    Continue Learning
+                                </a>
+                            `;
+                        }
+
+                        return `
+                            <div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                                <div class="relative overflow-hidden aspect-video">
+                                    <img src="${course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80'}" 
+                                         alt="${course.title}" 
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                    <div class="absolute top-3 left-3 flex flex-col gap-2">
+                                        <span class="px-3 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-[10px] uppercase tracking-wider font-bold rounded-full text-emerald-600 shadow-sm border border-slate-100 dark:border-slate-800">
+                                            ${course.category || 'Professional'}
+                                        </span>
+                                        ${isPending ? `
+                                            <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] uppercase tracking-wider font-bold rounded-full border border-amber-200 dark:border-amber-800/50">
+                                                Approval Pending
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                <div class="p-6">
+                                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">${course.title}</h3>
+                                    <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 line-clamp-2 h-10">
+                                        ${course.description || 'No description provided for this course.'}
+                                    </p>
+                                    <div class="flex items-center justify-between mt-auto">
+                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">
+                                            ${course.price === 0 || !course.price ? 'Free' : '$' + course.price}
+                                        </span>
+                                        ${actionButton}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="p-6">
-                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">${course.title}</h3>
-                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 line-clamp-2 h-10">
-                                    ${course.description || 'No description provided for this course.'}
-                                </p>
-                                <div class="flex items-center justify-between mt-auto">
-                                    <span class="text-emerald-600 dark:text-emerald-400 font-bold">
-                                        ${course.price === 0 || !course.price ? 'Free' : '$' + course.price}
-                                    </span>
-                                    <a href="singlecourse.html?id=${course.id}" 
-                                       class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-emerald-600/20">
-                                        Enroll Now
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
                     
                     loadingEl.classList.add('hidden');
                     gridEl.classList.remove('hidden');
