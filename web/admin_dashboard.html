@@ -359,7 +359,7 @@
         }
 
         async function loadCourses() {
-            const { data } = await supabaseClient.from('courses').select('*').order('updated_at', { ascending: false });
+            const { data } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
             const list = document.getElementById('course-list');
             list.innerHTML = data.map(course => `
                 <div onclick="selectCourse('${course.id}', '${course.title}')" 
@@ -395,7 +395,7 @@
         }
 
         async function loadEnrollments() {
-            const { data: enrollments } = await supabaseClient.from('enrollments').select('*, courses(title)').order('updated_at', { ascending: false });
+            const { data: enrollments } = await supabaseClient.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false });
             const tbody = document.getElementById('enrollment-tbody');
             
             tbody.innerHTML = enrollments.map(e => `
