@@ -6,7 +6,6 @@
     <title>Playing Lesson | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
     
     <style>
@@ -24,106 +23,41 @@
         
         .video-interaction-shield {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: calc(100% - 80px); 
-            z-index: 10;
-            background: transparent;
-            cursor: pointer;
+            top: 0; left: 0; width: 100%; height: calc(100% - 80px); 
+            z-index: 10; cursor: pointer;
         }
 
         #video-watermark {
-            position: absolute;
-            z-index: 20;
-            pointer-events: none;
-            color: rgba(255, 255, 255, 0.2);
-            font-size: 11px;
-            font-weight: bold;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
-            user-select: none;
-            padding: 10px;
-            transition: all 1.5s ease-in-out;
+            position: absolute; z-index: 20; pointer-events: none;
+            color: rgba(255, 255, 255, 0.15); font-size: 11px; font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.4); user-select: none;
+            padding: 10px; transition: all 1.5s ease-in-out;
         }
 
         .custom-controls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            position: absolute; bottom: 0; left: 0; right: 0;
             background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.6), transparent);
-            z-index: 30;
-            display: flex;
-            flex-direction: column;
-            padding: 10px 20px 20px 20px;
-            opacity: 0;
-            transition: opacity 0.3s;
+            z-index: 30; display: flex; flex-direction: column; padding: 10px 20px 20px 20px;
+            opacity: 0; transition: opacity 0.3s;
         }
 
-        .video-wrapper:hover .custom-controls {
-            opacity: 1;
-        }
+        .video-wrapper:hover .custom-controls { opacity: 1; }
 
-        .control-btn {
-            color: white;
-            padding: 8px;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-
-        .control-btn:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        input[type=range] {
-            accent-color: #10b981;
-            cursor: pointer;
-            height: 4px;
-        }
+        .control-btn { color: white; padding: 8px; border-radius: 50%; transition: background 0.2s; }
+        .control-btn:hover { background: rgba(255,255,255,0.1); }
 
         .progress-container {
-            width: 100%;
-            height: 6px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-            position: relative;
-            cursor: pointer;
-            margin-bottom: 12px;
-            transition: height 0.1s;
+            width: 100%; height: 6px; background: rgba(255,255,255,0.2);
+            border-radius: 3px; position: relative; cursor: pointer;
+            margin-bottom: 12px; transition: height 0.1s;
         }
-        
-        .progress-container:hover {
-            height: 8px;
-        }
+        .progress-container:hover { height: 8px; }
+        .progress-fill { height: 100%; background: #10b981; border-radius: 3px; width: 0%; }
 
-        .progress-fill {
-            height: 100%;
-            background: #10b981;
-            border-radius: 3px;
-            width: 0%;
-            position: relative;
-        }
-
-        .type-badge {
-            font-size: 9px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
+        .type-badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 800; }
     </style>
-    <script>
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { emerald: { 500: '#10b981', 600: '#059669', 700: '#047857' } }
-                }
-            }
-        };
-    </script>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 flex flex-col">
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen flex flex-col transition-colors duration-300">
 
     <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16 flex items-center shrink-0 z-50">
         <div class="max-w-full w-full px-6 flex items-center justify-between">
@@ -133,7 +67,7 @@
                 </a>
                 <h1 id="nav-course-title" class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] uppercase tracking-wider">Loading...</h1>
             </div>
-            <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600">
+            <button onclick="document.documentElement.classList.toggle('dark')" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
             </button>
         </div>
@@ -141,6 +75,7 @@
 
     <div class="flex flex-1 overflow-hidden">
         <main class="flex-1 overflow-y-auto custom-scrollbar">
+            <!-- Main Content Area -->
             <div id="player-view" class="hidden">
                 <div id="video-container-main" class="video-wrapper">
                     <div id="yt-player" class="w-full h-full"></div>
@@ -148,53 +83,28 @@
                     <div id="video-watermark">SECURE STREAM</div>
 
                     <div class="custom-controls">
-                        <div id="progress-container" class="progress-container">
-                            <div id="progress-fill" class="progress-fill"></div>
-                        </div>
-
+                        <div id="progress-container" class="progress-container"><div id="progress-fill" class="progress-fill"></div></div>
                         <div class="flex items-center gap-4 w-full">
                             <button id="play-pause-btn" class="control-btn">
                                 <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                             </button>
-
-                            <div class="flex items-center gap-2 group/vol">
-                                <button id="mute-btn" class="control-btn">
-                                    <svg id="volume-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                                </button>
-                                <input id="volume-slider" type="range" min="0" max="100" value="100" class="w-0 group-hover/vol:w-20 transition-all duration-300">
-                            </div>
-
-                            <div class="text-white text-xs font-medium font-mono select-none">
-                                <span id="current-time">0:00</span> / <span id="duration">0:00</span>
-                            </div>
-
+                            <div class="text-white text-xs font-mono"><span id="current-time">0:00</span> / <span id="duration">0:00</span></div>
                             <div class="ml-auto flex items-center gap-4">
                                 <select id="speed-selector" class="bg-transparent text-white text-xs font-bold border border-white/20 rounded px-2 py-1 outline-none">
-                                    <option value="0.5" class="bg-black">0.5x</option>
                                     <option value="1" class="bg-black" selected>1x</option>
                                     <option value="1.5" class="bg-black">1.5x</option>
                                     <option value="2" class="bg-black">2x</option>
                                 </select>
-                                <button id="fs-btn" class="control-btn">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div id="video-loader" class="absolute inset-0 bg-black flex items-center justify-center z-40">
-                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
                     </div>
                 </div>
 
                 <div class="max-w-5xl mx-auto px-6 py-10">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                         <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest block">Lesson</span>
-                                <span id="lesson-type-badge" class="type-badge bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">...</span>
-                            </div>
+                            <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest block mb-1">Lesson</span>
                             <h2 id="lesson-title" class="text-2xl font-black text-slate-900 dark:text-white leading-tight">...</h2>
                         </div>
                         <div class="flex items-center gap-3">
@@ -206,24 +116,24 @@
                 </div>
             </div>
 
-            <div id="loading-overlay" class="h-[60vh] w-full flex flex-col items-center justify-center">
+            <!-- Status Views -->
+            <div id="loading-overlay" class="h-full w-full flex flex-col items-center justify-center p-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-                <p class="mt-4 text-slate-500 text-sm font-medium">Fetching course content...</p>
+                <p class="mt-4 text-slate-500 font-medium">Loading Course Content...</p>
             </div>
             
-            <div id="error-view" class="hidden h-[60vh] w-full flex flex-col items-center justify-center px-6 text-center">
-                <div class="bg-red-50 text-red-600 p-4 rounded-2xl mb-4">
-                    <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <p id="error-message" class="font-bold">Failed to load content.</p>
+            <div id="error-view" class="hidden h-full w-full flex flex-col items-center justify-center px-6 text-center">
+                <div class="bg-red-50 dark:bg-red-900/20 text-red-600 p-8 rounded-3xl max-w-md">
+                    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <h3 class="text-xl font-black mb-2 uppercase tracking-tight">Load Error</h3>
+                    <p id="error-message" class="text-sm opacity-80 mb-6">Course content could not be retrieved.</p>
+                    <a href="dashboard.html" class="inline-block bg-red-600 text-white px-6 py-3 rounded-xl font-bold">Back to Dashboard</a>
                 </div>
-                <a href="dashboard.html" class="text-emerald-600 font-bold hover:underline">Return to Dashboard</a>
             </div>
         </main>
 
         <aside class="hidden lg:flex w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex-col shrink-0">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-800">
-                <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Curriculum</h3>
-            </div>
+            <div class="p-6 border-b border-slate-200 dark:border-slate-800 font-black uppercase tracking-widest text-xs">Curriculum</div>
             <div id="sidebar-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2"></div>
         </aside>
     </div>
@@ -235,64 +145,138 @@
         };
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-        let player;
-        let currentLessons = [];
-        let isPlayerReady = false;
-        let timeUpdateInterval;
+        let player, currentLessons = [], isPlayerReady = false;
 
-        function formatTime(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = Math.floor(seconds % 60);
-            return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m}:${s.toString().padStart(2, '0')}`;
-        }
+        document.addEventListener('DOMContentLoaded', initApp);
 
-        function getYouTubeId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url?.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : url;
-        }
-
-        // Initialize Data Fetching immediately
-        document.addEventListener('DOMContentLoaded', initData);
-
-        async function initData() {
+        async function initApp() {
             const courseId = sessionStorage.getItem('current_course_id');
-            const lessonId = sessionStorage.getItem('current_lesson_id');
+            const storedLessonId = sessionStorage.getItem('current_lesson_id');
 
-            if (!courseId || !lessonId) {
-                showError("No course or lesson selected. Please return to dashboard.");
+            if (!courseId) {
+                showError("No course ID found in session. Please select a course from the dashboard.");
                 return;
             }
 
             try {
-                // Fetch User for Watermark
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (user) {
-                    document.getElementById('video-watermark').textContent = `SECURE STREAM | ${user.email}`;
-                    startWatermarkMovement();
-                }
+                // 1. Fetch Course Info
+                const { data: course, error: cErr } = await supabaseClient.from('courses').select('title').eq('id', courseId).single();
+                if (cErr) throw new Error("Course not found: " + cErr.message);
+                document.getElementById('nav-course-title').textContent = course.title;
 
-                // Fetch Course and Lessons
-                const [cRes, lRes] = await Promise.all([
-                    supabaseClient.from('courses').select('*').eq('id', courseId).single(),
-                    supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
-                ]);
+                // 2. Fetch Lessons
+                const { data: lessons, error: lErr } = await supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true });
+                if (lErr) throw new Error("Lessons fetch error: " + lErr.message);
+                if (!lessons || lessons.length === 0) throw new Error("This course has no lessons yet.");
 
-                if (cRes.error || lRes.error) throw new Error("Database fetch failed");
-
-                currentLessons = lRes.data || [];
-                document.getElementById('nav-course-title').textContent = cRes.data?.title || 'Course';
+                currentLessons = lessons;
                 
+                // 3. Determine active lesson (fallback to first lesson if ID is invalid/missing)
+                let activeLesson = currentLessons.find(l => l.id === storedLessonId) || currentLessons[0];
+                sessionStorage.setItem('current_lesson_id', activeLesson.id);
+
                 renderCurriculum();
-                loadLesson(lessonId, false); // false = don't try to load YT yet if not ready
-                
+                updateLessonUI(activeLesson);
+
+                // Show Player
                 document.getElementById('loading-overlay').classList.add('hidden');
                 document.getElementById('player-view').classList.remove('hidden');
 
             } catch (err) {
-                showError("Could not load course content. Please check your connection.");
+                console.error(err);
+                showError(err.message);
             }
+        }
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('yt-player', {
+                height: '100%', width: '100%',
+                playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1 },
+                events: {
+                    'onReady': () => {
+                        isPlayerReady = true;
+                        const activeId = sessionStorage.getItem('current_lesson_id');
+                        const lesson = currentLessons.find(l => l.id === activeId);
+                        if (lesson && lesson.video_url) {
+                            player.loadVideoById(extractYTId(lesson.video_url));
+                        }
+                        startProgressTimer();
+                    },
+                    'onStateChange': (e) => {
+                        document.getElementById('play-icon').classList.toggle('hidden', e.data === 1);
+                        document.getElementById('pause-icon').classList.toggle('hidden', e.data !== 1);
+                    }
+                }
+            });
+        }
+
+        function updateLessonUI(lesson) {
+            const idx = currentLessons.indexOf(lesson);
+            document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
+            document.getElementById('lesson-title').textContent = lesson.title;
+            document.getElementById('lesson-desc').textContent = lesson.description || '';
+
+            if (isPlayerReady && lesson.video_url) {
+                player.loadVideoById(extractYTId(lesson.video_url));
+            }
+
+            // Update Nav
+            const prevBtn = document.getElementById('prev-lesson');
+            const nextBtn = document.getElementById('next-lesson');
+            
+            prevBtn.disabled = idx === 0;
+            prevBtn.onclick = () => switchLesson(currentLessons[idx - 1].id);
+            
+            if (idx === currentLessons.length - 1) {
+                nextBtn.textContent = "Complete Course";
+                nextBtn.onclick = () => window.location.href = 'dashboard.html';
+            } else {
+                nextBtn.textContent = "Next Lesson";
+                nextBtn.onclick = () => switchLesson(currentLessons[idx + 1].id);
+            }
+        }
+
+        function switchLesson(id) {
+            sessionStorage.setItem('current_lesson_id', id);
+            const lesson = currentLessons.find(l => l.id === id);
+            updateLessonUI(lesson);
+            renderCurriculum();
+        }
+
+        function renderCurriculum() {
+            const activeId = sessionStorage.getItem('current_lesson_id');
+            const list = document.getElementById('sidebar-list');
+            list.innerHTML = currentLessons.map((l, i) => `
+                <div onclick="switchLesson('${l.id}')" class="p-3 rounded-xl cursor-pointer transition-all ${l.id === activeId ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-black opacity-30 w-4">${i+1}</span>
+                        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate flex-1">${l.title}</h4>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function extractYTId(url) {
+            const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:v\/|u\/\w\/|embed\/|watch\?v=))([^#\&\?]*)/);
+            return (match && match[1].length === 11) ? match[1] : url;
+        }
+
+        function startProgressTimer() {
+            setInterval(() => {
+                if (isPlayerReady && player.getCurrentTime) {
+                    const cur = player.getCurrentTime();
+                    const dur = player.getDuration();
+                    document.getElementById('progress-fill').style.width = (cur/dur * 100) + '%';
+                    document.getElementById('current-time').textContent = formatTime(cur);
+                    document.getElementById('duration').textContent = formatTime(dur);
+                }
+            }, 500);
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const rs = Math.floor(s % 60);
+            return `${m}:${rs.toString().padStart(2, '0')}`;
         }
 
         function showError(msg) {
@@ -301,167 +285,18 @@
             document.getElementById('error-message').textContent = msg;
         }
 
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('yt-player', {
-                height: '100%',
-                width: '100%',
-                playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'disablekb': 1 },
-                events: {
-                    'onReady': () => { 
-                        isPlayerReady = true; 
-                        document.getElementById('video-loader').classList.add('hidden');
-                        const activeId = sessionStorage.getItem('current_lesson_id');
-                        if (activeId) loadLesson(activeId, true);
-                        startTimeUpdates();
-                    },
-                    'onStateChange': (event) => {
-                        const playIcon = document.getElementById('play-icon');
-                        const pauseIcon = document.getElementById('pause-icon');
-                        if (event.data === YT.PlayerState.PLAYING) {
-                            playIcon.classList.add('hidden');
-                            pauseIcon.classList.remove('hidden');
-                        } else {
-                            playIcon.classList.remove('hidden');
-                            pauseIcon.classList.add('hidden');
-                        }
-                    }
-                }
-            });
-        }
-
-        function startTimeUpdates() {
-            if (timeUpdateInterval) clearInterval(timeUpdateInterval);
-            timeUpdateInterval = setInterval(() => {
-                if (isPlayerReady && player && player.getCurrentTime) {
-                    const current = player.getCurrentTime();
-                    const total = player.getDuration();
-                    const pct = total > 0 ? (current / total) * 100 : 0;
-                    document.getElementById('progress-fill').style.width = `${pct}%`;
-                    document.getElementById('current-time').textContent = formatTime(current);
-                    document.getElementById('duration').textContent = formatTime(total);
-                }
-            }, 500);
-        }
-
-        function loadLesson(id, triggerPlayer = true) {
-            const lesson = currentLessons.find(l => l.id === id);
-            if (!lesson) return;
-
-            // HANDLE NON-VIDEO TYPES (External Tabs)
-            if (lesson.lesson_type && lesson.lesson_type !== 'video') {
-                if (lesson.video_url) window.open(lesson.video_url, '_blank');
-                return;
-            }
-
-            sessionStorage.setItem('current_lesson_id', id);
-            const idx = currentLessons.indexOf(lesson);
-
-            document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
-            document.getElementById('lesson-title').textContent = lesson.title;
-            document.getElementById('lesson-desc').textContent = lesson.description || '';
-            document.getElementById('lesson-type-badge').textContent = lesson.lesson_type || 'video';
-
-            if (triggerPlayer && isPlayerReady && player && player.loadVideoById) {
-                const ytId = getYouTubeId(lesson.video_url);
-                player.loadVideoById(ytId);
-            }
-
-            updateNavButtons(idx);
-            renderCurriculum();
-        }
-
-        function updateNavButtons(idx) {
-            const prev = document.getElementById('prev-lesson');
-            const next = document.getElementById('next-lesson');
-            prev.disabled = idx === 0;
-            prev.onclick = () => loadLesson(currentLessons[idx - 1].id);
-            if (idx === currentLessons.length - 1) {
-                next.textContent = 'Finish';
-                next.onclick = () => window.location.href = 'dashboard.html';
-            } else {
-                next.textContent = 'Next Lesson';
-                next.onclick = () => loadLesson(currentLessons[idx + 1].id);
-            }
-        }
-
-        function renderCurriculum() {
-            const activeId = sessionStorage.getItem('current_lesson_id');
-            const container = document.getElementById('sidebar-list');
-            if (!container) return;
-            
-            container.innerHTML = currentLessons.map((l, i) => {
-                const isVideo = !l.lesson_type || l.lesson_type === 'video';
-                return `
-                    <div onclick="loadLesson('${l.id}')" class="p-3 rounded-xl cursor-pointer transition-all ${l.id === activeId ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}">
-                        <div class="flex items-start gap-2">
-                            <div class="mt-1">
-                                ${isVideo ? 
-                                    '<svg class="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' : 
-                                    '<svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>'}
-                            </div>
-                            <div class="flex-1 overflow-hidden">
-                                <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${l.title}</h4>
-                                <span class="text-[9px] uppercase font-black opacity-40">${l.lesson_type || 'video'}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function startWatermarkMovement() {
-            const el = document.getElementById('video-watermark');
-            const pos = [{t:'5%',l:'5%'}, {t:'5%',l:'70%'}, {t:'80%',l:'5%'}, {t:'80%',l:'70%'}];
-            let i = 0;
-            setInterval(() => { i = (i+1)%pos.length; el.style.top = pos[i].t; el.style.left = pos[i].l; }, 5000);
-        }
-
-        document.getElementById('progress-container').onclick = function(e) {
-            if (!isPlayerReady) return;
-            const rect = this.getBoundingClientRect();
-            const pct = (e.clientX - rect.left) / rect.width;
-            player.seekTo(player.getDuration() * pct, true);
-        };
-
+        // Basic Controls
         document.getElementById('play-pause-btn').onclick = () => {
             if (!isPlayerReady) return;
             player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
         };
-
-        document.getElementById('shield').onclick = () => {
-             if (!isPlayerReady) return;
-             player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
-        };
-
-        document.getElementById('volume-slider').oninput = (e) => {
-            if (isPlayerReady) player.setVolume(e.target.value);
-        };
-
-        document.getElementById('mute-btn').onclick = () => {
+        document.getElementById('shield').onclick = () => document.getElementById('play-pause-btn').click();
+        document.getElementById('progress-container').onclick = (e) => {
             if (!isPlayerReady) return;
-            if (player.isMuted()) {
-                player.unMute();
-                document.getElementById('volume-slider').value = player.getVolume();
-            } else {
-                player.mute();
-                document.getElementById('volume-slider').value = 0;
-            }
+            const pct = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
+            player.seekTo(player.getDuration() * pct, true);
         };
-
-        document.getElementById('speed-selector').onchange = (e) => {
-            if (isPlayerReady) player.setPlaybackRate(parseFloat(e.target.value));
-        };
-
-        document.getElementById('fs-btn').onclick = () => {
-            const container = document.getElementById('video-container-main');
-            if (!document.fullscreenElement) {
-                container.requestFullscreen?.();
-            } else {
-                document.exitFullscreen?.();
-            }
-        };
-
-        document.getElementById('theme-toggle').onclick = () => document.documentElement.classList.toggle('dark');
+        document.getElementById('speed-selector').onchange = (e) => player.setPlaybackRate(parseFloat(e.target.value));
     </script>
 </body>
 </html>
