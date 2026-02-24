@@ -159,7 +159,7 @@
                             <p class="text-xs text-slate-400 font-bold mt-1">Showing all history: Pending, Approved, and Rejected</p>
                         </div>
                         <button onclick="loadEnrollments()" class="p-2 text-slate-400 hover:text-emerald-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"/></svg>
                         </button>
                     </div>
                     <div class="overflow-x-auto">
@@ -196,7 +196,7 @@
                                 <tr class="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
                                     <th class="px-8 py-4">Name / ID</th>
                                     <th class="px-8 py-4">Email / Info</th>
-                                    <th class="px-8 py-4">Joined Date</th>
+                                    <th class="px-8 py-4">Last Active</th>
                                     <th class="px-8 py-4 text-right">Action</th>
                                 </tr>
                             </thead>
@@ -340,6 +340,7 @@
         async function loadStats() {
             const { count: cCount } = await supabaseClient.from('courses').select('*', { count: 'exact', head: true });
             const { count: lCount } = await supabaseClient.from('lessons').select('*', { count: 'exact', head: true });
+            // Using updated_at since created_at doesn't exist in profiles
             const { count: uCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
             const { data: eData } = await supabaseClient.from('enrollments').select('status');
 
@@ -359,7 +360,7 @@
         }
 
         async function loadCourses() {
-            const { data } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+            const { data } = await supabaseClient.from('courses').select('*').order('updated_at', { ascending: false });
             const list = document.getElementById('course-list');
             list.innerHTML = data.map(course => `
                 <div onclick="selectCourse('${course.id}', '${course.title}')" 
@@ -425,7 +426,7 @@
         }
 
         async function loadStudents() {
-            // Updated query to filter by role = student
+            // Updated to filter by role = student and use updated_at instead of created_at
             const { data: students, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
@@ -456,7 +457,7 @@
                         <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Role: ${s.role}</p>
                     </td>
                     <td class="px-8 py-5 text-slate-500 text-xs">
-                        ${new Date(s.updated_at).toLocaleDateString()}
+                        ${s.updated_at ? new Date(s.updated_at).toLocaleDateString() : 'N/A'}
                     </td>
                     <td class="px-8 py-5 text-right">
                         <button onclick="alert('Management features for individual accounts coming soon.')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 rounded-lg transition text-[10px] font-black uppercase">Manage</button>
