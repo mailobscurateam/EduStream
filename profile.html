@@ -22,6 +22,34 @@
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
 
+        /* Cover Image Styling with EduStream Text */
+        .cover-image-container {
+            position: relative;
+            height: 160px;
+            background: #0f172a;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cover-text {
+            font-size: 4rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            user-select: none;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .cover-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 0%, rgba(15, 23, 42, 0.4) 100%);
+        }
+
         /* Beautiful Branded Background Pattern */
         .edustream-bg {
             background-color: #0f172a; /* Slate 950 */
@@ -94,7 +122,10 @@
 
             <!-- Profile Header -->
             <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-800/50 overflow-hidden mb-8 transition-transform hover:scale-[1.01]">
-                <div class="h-32 profile-gradient relative">
+                <!-- Branded Cover Image -->
+                <div class="cover-image-container profile-gradient">
+                    <div class="cover-text">EduStream</div>
+                    <div class="cover-overlay"></div>
                     <div class="absolute -bottom-12 left-8">
                         <div class="w-24 h-24 rounded-2xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-900 flex items-center justify-center text-emerald-600 shadow-xl">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,7 +135,7 @@
                     </div>
                 </div>
                 <div class="pt-16 pb-8 px-8">
-                    <h1 id="display-name" class="text-2xl font-bold">Loading...</h1>
+                    <h1 id="display-name" class="text-2xl font-bold text-slate-900 dark:text-white">Loading...</h1>
                     <p id="display-email" class="text-slate-500 dark:text-slate-400">Please wait while we fetch your details</p>
                 </div>
             </div>
@@ -125,8 +156,8 @@
                             <input type="text" id="full_name" class="w-full px-4 py-2 border dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
-                            <input type="tel" id="phone" class="w-full px-4 py-2 border dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number (Read-only)</label>
+                            <input type="tel" id="phone" disabled class="w-full px-4 py-2 border dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-500 rounded-lg cursor-not-allowed">
                         </div>
                     </div>
 
@@ -161,19 +192,29 @@
 
         // Load User Data
         async function loadProfile() {
-            const { data: { user }, error } = await supabaseClient.auth.getUser();
+            try {
+                const { data: { user }, error } = await supabaseClient.auth.getUser();
 
-            if (error || !user) {
+                if (error || !user) {
+                    window.location.assign('login.html');
+                    return;
+                }
+
+                // Metadata safety fallback
+                const metadata = user.user_metadata || {};
+                
+                document.getElementById('display-name').textContent = metadata.full_name || 'EduStream Student';
+                document.getElementById('display-email').textContent = user.email || '';
+                document.getElementById('full_name').value = metadata.full_name || '';
+                document.getElementById('phone').value = metadata.phone_number || '';
+                document.getElementById('email').value = user.email || '';
+                
+                const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'N/A';
+                document.getElementById('last-login').textContent = lastSignIn;
+            } catch (err) {
+                console.error('Error loading profile:', err);
                 window.location.assign('login.html');
-                return;
             }
-
-            document.getElementById('display-name').textContent = user.user_metadata.full_name || 'EduStream Student';
-            document.getElementById('display-email').textContent = user.email;
-            document.getElementById('full_name').value = user.user_metadata.full_name || '';
-            document.getElementById('phone').value = user.user_metadata.phone_number || '';
-            document.getElementById('email').value = user.email;
-            document.getElementById('last-login').textContent = new Date(user.last_sign_in_at).toLocaleDateString();
         }
 
         // Update Profile
@@ -181,13 +222,15 @@
             e.preventDefault();
             const saveBtn = document.getElementById('save-btn');
             const fullName = document.getElementById('full_name').value;
-            const phone = document.getElementById('phone').value;
+            // Phone is now read-only, so we don't need to capture updates for it here
 
             saveBtn.disabled = true;
+            const originalText = saveBtn.textContent;
             saveBtn.textContent = 'Saving...';
 
+            // Only update full_name since phone and email are read-only
             const { error } = await supabaseClient.auth.updateUser({
-                data: { full_name: fullName, phone_number: phone }
+                data: { full_name: fullName }
             });
 
             if (error) {
@@ -198,7 +241,7 @@
             }
 
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Save Changes';
+            saveBtn.textContent = originalText;
         });
 
         // Logout
@@ -234,6 +277,7 @@
             setTimeout(() => box.classList.add('hidden'), 4000);
         }
 
+        // Execute initialization
         updateThemeUI();
         loadProfile();
     </script>
