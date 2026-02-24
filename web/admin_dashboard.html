@@ -3,326 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | EduStream</title>
+    <title>Admin Panel | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 
+                            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 
+                            800: '#075985', 900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        };
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
-        
-        #sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .sidebar-collapsed { width: 80px !important; }
-        .sidebar-collapsed .nav-text { display: none; }
-        .sidebar-collapsed .logo-text { display: none; }
-        
-        .nav-item-active { 
-            background: #10b981; 
-            color: white !important; 
-            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2);
-        }
-
-        #auth-guard {
-            display: flex;
-            position: fixed;
-            inset: 0;
-            background: white;
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        .dark #auth-guard { background: #020617; }
+        .sidebar-transition { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .active-nav { @apply bg-brand-50 dark:bg-brand-900/20 text-brand-600 font-bold; }
+        [v-cloak] { display: none; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden flex">
-
-    <!-- Auth Guard Overlay -->
-    <div id="auth-guard">
-        <div class="flex flex-col items-center gap-4">
-            <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <p class="font-black uppercase tracking-widest text-xs text-slate-400">Verifying Admin Privileges...</p>
-        </div>
-    </div>
+<body id="admin-body" class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 flex opacity-0">
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen relative shrink-0">
-        <div class="p-6 flex items-center gap-3">
-            <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0">
-                <span class="text-white font-black text-xl">E</span>
-            </div>
-            <span class="logo-text font-black text-xl tracking-tighter">Edu<span class="text-emerald-600">Portal</span></span>
+    <aside id="sidebar" class="sidebar-transition w-64 h-screen sticky top-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 overflow-hidden">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <a href="#" onclick="switchView('approvals')" class="flex items-center gap-2 overflow-hidden">
+                <div class="w-8 h-8 bg-brand-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-black">E</div>
+                <span id="logo-text" class="text-xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter whitespace-nowrap">EduStream</span>
+            </a>
+            <button id="toggle-sidebar" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+                <svg id="toggle-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+            </button>
         </div>
 
-        <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar">
-            <button onclick="switchTab('content')" id="nav-content" class="nav-item-active w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-sm">
-                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                <span class="nav-text">Content Manager</span>
-            </button>
-            <button onclick="switchTab('approvals')" id="nav-approvals" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-sm text-left">
+        <nav class="flex-grow py-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+            <button onclick="switchView('approvals')" id="nav-approvals" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group active-nav">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <div class="nav-text flex items-center justify-between w-full">
-                    <span>Approvals</span>
-                    <span id="badge-pending" class="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
-                </div>
+                <span class="nav-label whitespace-nowrap">Approvals</span>
             </button>
-            <button onclick="switchTab('students')" id="nav-students" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-sm text-left">
+            <button onclick="switchView('courses')" id="nav-courses" class="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl font-medium transition-all group">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <span class="nav-label whitespace-nowrap">Courses</span>
+            </button>
+            <button onclick="switchView('users')" id="nav-users" class="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl font-medium transition-all group">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                <span class="nav-text">Student Management</span>
+                <span class="nav-label whitespace-nowrap">Users</span>
             </button>
-            <div class="h-px bg-slate-100 dark:bg-slate-800 my-4"></div>
-            <a href="dashboard.html" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-400 hover:text-emerald-500 transition-all font-bold text-sm">
-                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                <span class="nav-text">Back to Home</span>
-            </a>
         </nav>
 
-        <div class="p-4 border-t border-slate-100 dark:border-slate-800">
-            <button id="sidebar-toggle" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-slate-400">
-                <svg id="toggle-icon" class="w-5 h-5 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                <span class="nav-text text-xs font-bold uppercase tracking-widest">Collapse Sidebar</span>
+        <div class="p-3 border-t border-slate-100 dark:border-slate-800 space-y-1">
+            <button id="theme-toggle" class="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl font-medium transition-all">
+                <div class="w-5 h-5 shrink-0 flex items-center justify-center">
+                    <svg id="sun-icon" class="w-full h-full hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+                    <svg id="moon-icon" class="w-full h-full hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </div>
+                <span class="nav-label whitespace-nowrap">Appearance</span>
+            </button>
+            <button id="logout-btn" class="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl font-medium transition-all">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                <span class="nav-label whitespace-nowrap">Sign Out</span>
             </button>
         </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden">
-        <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex items-center justify-between px-8 shrink-0">
-            <h2 id="page-title" class="font-black text-sm uppercase tracking-widest text-slate-400">Content Manager</h2>
-            <div class="flex items-center gap-4">
-                <button id="theme-toggle" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-500">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                </button>
-                <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"></div>
-            </div>
-        </header>
-
-        <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Courses</p>
-                    <h3 id="stat-courses" class="text-3xl font-black">0</h3>
-                </div>
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Lessons</p>
-                    <h3 id="stat-lessons" class="text-3xl font-black">0</h3>
-                </div>
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pending Requests</p>
-                    <h3 id="stat-pending" class="text-3xl font-black text-amber-500">0</h3>
-                </div>
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Students</p>
-                    <h3 id="stat-users" class="text-3xl font-black">0</h3>
+    <!-- Main Content -->
+    <main class="flex-grow p-4 md:p-8 lg:p-12 overflow-x-hidden">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-10 flex justify-between items-end">
+                <div>
+                    <h1 id="view-title" class="text-3xl font-black text-slate-900 dark:text-white mb-2">Platform Administration</h1>
+                    <p id="view-desc" class="text-slate-500 dark:text-slate-400">Review and approve enrollment requests from students.</p>
                 </div>
             </div>
 
-            <!-- Tab: Content Manager -->
-            <section id="section-content" class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <div class="lg:col-span-1 space-y-6">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-black uppercase tracking-tight">Courses</h3>
-                    </div>
-                    <div id="course-list" class="space-y-3">
-                        <div class="animate-pulse flex flex-col gap-3">
-                            <div class="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl"></div>
-                            <div class="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl"></div>
-                        </div>
-                    </div>
+            <!-- Admin Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Pending Approvals</p>
+                    <p id="stat-pending" class="text-3xl font-black text-amber-500">0</p>
                 </div>
-
-                <div class="lg:col-span-2 space-y-6">
-                    <div id="lesson-header" class="hidden flex items-center justify-between">
-                        <h3 class="text-lg font-black uppercase tracking-tight">Module Editor: <span id="selected-course-name" class="text-emerald-600">...</span></h3>
-                        <button onclick="showLessonModal()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition flex items-center gap-2">Add New Lesson</button>
-                    </div>
-                    <div id="lessons-table-container" class="hidden bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                                <tr class="text-[10px] font-black uppercase text-slate-400">
-                                    <th class="px-6 py-4">Module</th>
-                                    <th class="px-6 py-4">Title</th>
-                                    <th class="px-6 py-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lessons-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-                        </table>
-                    </div>
-                    <div id="no-course-selected" class="h-64 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-                        <p class="font-bold text-sm">Select a course to edit lessons</p>
-                    </div>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Students</p>
+                    <p id="stat-students" class="text-3xl font-black text-slate-900 dark:text-white">--</p>
                 </div>
-            </section>
-
-            <!-- Tab: Approvals -->
-            <section id="section-approvals" class="hidden space-y-6">
-                <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-black uppercase tracking-tight">Course Enrollments</h3>
-                            <p class="text-xs text-slate-400 font-bold mt-1">Pending approval for student access</p>
-                        </div>
-                        <button onclick="loadEnrollments()" class="p-2 text-slate-400 hover:text-emerald-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"/></svg>
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                    <th class="px-8 py-4">Student ID</th>
-                                    <th class="px-8 py-4">Course</th>
-                                    <th class="px-8 py-4 text-right">Status</th>
-                                    <th class="px-8 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="enrollment-tbody" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm font-medium"></tbody>
-                        </table>
-                    </div>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Courses</p>
+                    <p id="stat-courses" class="text-3xl font-black text-slate-900 dark:text-white">--</p>
                 </div>
-            </section>
-
-            <!-- Tab: Student Management -->
-            <section id="section-students" class="hidden space-y-6">
-                <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-black uppercase tracking-tight">Student Directory</h3>
-                            <p class="text-xs text-slate-400 font-bold mt-1">List of all registered students</p>
-                        </div>
-                        <button onclick="loadStudents()" class="p-2 text-slate-400 hover:text-emerald-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"/></svg>
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                    <th class="px-8 py-4">Student Name</th>
-                                    <th class="px-8 py-4">Email Address</th>
-                                    <th class="px-8 py-4">Status</th>
-                                    <th class="px-8 py-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="students-tbody" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm font-medium"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Modals -->
-    
-    <!-- Student Detail Modal (New) -->
-    <div id="student-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-6">
-        <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onclick="closeStudentModal()"></div>
-        <div class="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start shrink-0">
-                <div class="flex items-center gap-5">
-                    <div id="student-avatar-large" class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-2xl"></div>
-                    <div>
-                        <h3 id="student-detail-name" class="text-2xl font-black tracking-tight">Student Name</h3>
-                        <p id="student-detail-email" class="text-sm text-slate-400 font-bold"></p>
-                    </div>
-                </div>
-                <button onclick="closeStudentModal()" class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            
-            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8">
-                <!-- Data Grid -->
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Joined Date</p>
-                        <p id="student-detail-joined" class="font-bold text-sm">--/--/--</p>
-                    </div>
-                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Account ID</p>
-                        <p id="student-detail-id" class="font-bold text-[10px] text-slate-500 truncate">--</p>
-                    </div>
-                    <div class="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
-                        <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Status</p>
-                        <p class="font-black text-sm text-emerald-700 uppercase">Active</p>
-                    </div>
-                </div>
-
-                <!-- Course History -->
-                <div class="space-y-4">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                        Enrollment History
-                    </h4>
-                    <div id="student-enrollment-list" class="space-y-2">
-                        <!-- Items injected here -->
-                    </div>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Active Enrollments</p>
+                    <p id="stat-active" class="text-3xl font-black text-emerald-600">--</p>
                 </div>
             </div>
-            
-            <div class="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 shrink-0 flex justify-end">
-                <button onclick="closeStudentModal()" class="px-8 py-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest">Done</button>
+
+            <!-- Content Area -->
+            <div class="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                    <h2 id="table-title" class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                        Loading...
+                    </h2>
+                    <button id="refresh-btn" class="text-xs font-bold text-brand-600 hover:text-brand-700 uppercase tracking-tighter">Refresh</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead id="table-head"></thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+
+                <div id="empty-state" class="hidden py-20 text-center">
+                    <p class="text-slate-500 dark:text-slate-400 font-medium">Nothing found here.</p>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <div id="lesson-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6">
-        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeLessonModal()"></div>
-        <div class="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 p-8">
-            <h3 class="text-2xl font-black mb-6">Lesson Editor</h3>
-            <form id="lesson-form" class="space-y-4">
-                <input type="hidden" id="edit-lesson-id">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Section/Module</label>
-                        <input type="text" id="form-section" placeholder="Module 1" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Type</label>
-                        <select id="form-type" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <option value="video">Video (YouTube ID)</option>
-                            <option value="link">Resource Link</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Title</label>
-                    <input type="text" id="form-title" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">URL / Video ID</label>
-                    <input type="text" id="form-url" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                </div>
-                <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" onclick="closeLessonModal()" class="px-6 py-3 font-bold text-slate-500">Cancel</button>
-                    <button type="submit" class="px-8 py-3 bg-emerald-600 text-white rounded-xl font-black">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Enrollment Status Modal -->
-    <div id="enrollment-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6">
-        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeEnrollmentModal()"></div>
-        <div class="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 p-8">
-            <h3 class="text-xl font-black mb-4">Update Status</h3>
-            <p id="enrollment-detail-text" class="text-xs text-slate-400 font-bold mb-6">Updating enrollment status...</p>
-            
-            <form id="enrollment-status-form" class="space-y-6">
-                <input type="hidden" id="edit-enrollment-id">
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">New Status</label>
-                    <select id="edit-enrollment-status" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-sm">
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                </div>
-                <button type="submit" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-sm">Update Now</button>
-            </form>
-        </div>
-    </div>
+    <div id="toast" class="fixed bottom-8 right-8 px-6 py-3 bg-slate-900 text-white text-sm font-bold rounded-2xl shadow-2xl opacity-0 transition-all pointer-events-none z-[100]"></div>
 
     <script>
         const CONFIG = {
@@ -331,254 +141,169 @@
         };
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-        let selectedCourseId = null;
-        let allCourses = [];
+        let currentView = 'approvals';
 
-        async function checkAdmin() {
+        // UI Selectors
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggle-sidebar');
+        const logoText = document.getElementById('logo-text');
+        const navLabels = document.querySelectorAll('.nav-label');
+        const tableBody = document.getElementById('table-body');
+        const tableHead = document.getElementById('table-head');
+        const emptyState = document.getElementById('empty-state');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const adminBody = document.getElementById('admin-body');
+
+        async function checkAdminAccess() {
             try {
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) { window.location.href = 'index.html'; return; }
+                const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+                
+                if (authError || !user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
 
-                const { data: profile, error } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-                if (error || !profile || profile.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+                const { data: profile, error: profileError } = await supabaseClient
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
 
-                document.getElementById('auth-guard').style.display = 'none';
-                init();
-            } catch (err) { window.location.href = 'index.html'; }
+                if (profileError || !profile || profile.role !== 'admin') {
+                    console.warn("Access denied: User is not an administrator.");
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                // If admin, show body and init dashboard
+                adminBody.classList.remove('opacity-0');
+                adminBody.classList.add('opacity-100');
+                initDashboard();
+
+            } catch (err) {
+                console.error("Critical Auth Error:", err);
+                window.location.href = 'login.html';
+            }
         }
 
-        async function init() {
-            loadStats();
-            await loadCourses();
-            loadEnrollments();
-            loadStudents();
+        function initDashboard() {
+            updateIcons();
+            fetchStats();
+            switchView('approvals');
         }
 
-        function switchTab(tab) {
-            document.getElementById('section-content').classList.toggle('hidden', tab !== 'content');
-            document.getElementById('section-approvals').classList.toggle('hidden', tab !== 'approvals');
-            document.getElementById('section-students').classList.toggle('hidden', tab !== 'students');
-            document.getElementById('nav-content').classList.toggle('nav-item-active', tab === 'content');
-            document.getElementById('nav-approvals').classList.toggle('nav-item-active', tab === 'approvals');
-            document.getElementById('nav-students').classList.toggle('nav-item-active', tab === 'students');
-            const titles = { 'content': 'Content Manager', 'approvals': 'Enrollment Approvals', 'students': 'Student Management' };
-            document.getElementById('page-title').textContent = titles[tab];
+        // View Switcher logic
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('active-nav', 'bg-brand-50', 'dark:bg-brand-900/20', 'text-brand-600', 'font-bold');
+                btn.classList.add('text-slate-600', 'dark:text-slate-400', 'font-medium');
+            });
+            const activeBtn = document.getElementById(`nav-${view}`);
+            activeBtn.classList.add('active-nav', 'bg-brand-50', 'dark:bg-brand-900/20', 'text-brand-600', 'font-bold');
+            activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400', 'font-medium');
+
+            const title = document.getElementById('view-title');
+            const desc = document.getElementById('view-desc');
+            const tableTitle = document.getElementById('table-title');
+
+            if (view === 'approvals') {
+                title.innerText = "Platform Administration";
+                desc.innerText = "Review and approve enrollment requests.";
+                tableTitle.innerHTML = `<span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span> Enrollment Requests`;
+                fetchPendingEnrollments();
+            } else if (view === 'courses') {
+                title.innerText = "Course Management";
+                desc.innerText = "Monitor all courses.";
+                tableTitle.innerHTML = `<span class="w-2 h-2 bg-brand-500 rounded-full"></span> Catalog List`;
+                fetchCourses();
+            } else if (view === 'users') {
+                title.innerText = "User Directory";
+                desc.innerText = "Manage student accounts.";
+                tableTitle.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Student Database`;
+                fetchUsers();
+            }
         }
 
-        async function loadStats() {
+        async function fetchPendingEnrollments() {
+            tableHead.innerHTML = `<tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800"><th class="px-6 py-4 font-black">Order ID</th><th class="px-6 py-4 font-black">Student</th><th class="px-6 py-4 font-black">Course</th><th class="px-6 py-4 font-black">Date</th><th class="px-6 py-4 font-black text-right">Actions</th></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading...</td></tr>`;
+            const { data, error } = await supabaseClient.from('enrollments').select('*, courses(title)').in('status', ['pending', 'pending_approval']).order('created_at', { ascending: false });
+            if (error || !data?.length) { tableBody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+            tableBody.innerHTML = data.map(row => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">#${row.order_id || '---'}</td><td class="px-6 py-4"><span class="text-sm font-bold text-slate-900 dark:text-white">${row.user_id.substring(0,8)}</span></td><td class="px-6 py-4 text-sm font-medium">${row.courses?.title || 'Unknown'}</td><td class="px-6 py-4 text-xs">${new Date(row.created_at).toLocaleDateString()}</td><td class="px-6 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="updateStatus('${row.id}', 'active')" class="p-2 text-emerald-600 bg-emerald-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></button><button onclick="updateStatus('${row.id}', 'rejected')" class="p-2 text-red-600 bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div></td></tr>`).join('');
+        }
+
+        async function fetchCourses() {
+            tableHead.innerHTML = `<tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800"><th class="px-6 py-4 font-black">Thumbnail</th><th class="px-6 py-4 font-black">Course Info</th><th class="px-6 py-4 font-black">Price</th><th class="px-6 py-4 font-black text-right">Actions</th></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading...</td></tr>`;
+            const { data } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+            if (!data?.length) { tableBody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+            tableBody.innerHTML = data.map(course => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4"><img src="${course.thumbnail}" class="w-12 h-12 rounded-lg object-cover"></td><td class="px-6 py-4 font-bold text-sm">${course.title}</td><td class="px-6 py-4 text-sm font-bold text-brand-600">Rs. ${course.price}</td><td class="px-6 py-4 text-right"><button class="text-slate-400">Edit</button></td></tr>`).join('');
+        }
+
+        async function fetchUsers() {
+            tableHead.innerHTML = `<tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800"><th class="px-6 py-4 font-black">Student Details</th><th class="px-6 py-4 font-black">Role</th><th class="px-6 py-4 font-black">Join Date</th><th class="px-6 py-4 font-black text-right">Actions</th></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading...</td></tr>`;
+            const { data } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+            if (!data?.length) { tableBody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+            tableBody.innerHTML = data.map(user => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4"><span class="text-sm font-bold">${user.full_name || 'Student'}</span><br><span class="text-[10px] text-slate-400">${user.id}</span></td><td class="px-6 py-4"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${user.role==='admin'?'bg-brand-50 text-brand-600':'bg-emerald-50 text-emerald-600'} uppercase">${user.role || 'student'}</span></td><td class="px-6 py-4 text-xs">${new Date(user.created_at).toLocaleDateString()}</td><td class="px-6 py-4 text-right"><button class="text-slate-400">View</button></td></tr>`).join('');
+        }
+
+        async function updateStatus(id, status) {
+            const { error } = await supabaseClient.from('enrollments').update({ status }).eq('id', id);
+            if (!error) { showToast(`Enrollment ${status}`); fetchPendingEnrollments(); fetchStats(); }
+        }
+
+        async function fetchStats() {
+            const { count: sCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true });
             const { count: cCount } = await supabaseClient.from('courses').select('*', { count: 'exact', head: true });
-            const { count: lCount } = await supabaseClient.from('lessons').select('*', { count: 'exact', head: true });
-            const { count: sCount } = await supabaseClient.from('students').select('*', { count: 'exact', head: true });
-            const { data: eData } = await supabaseClient.from('enrollments').select('status');
-
-            const pendingCount = eData ? eData.filter(e => e.status === 'pending').length : 0;
+            const { count: pCount } = await supabaseClient.from('enrollments').select('*', { count: 'exact', head: true }).in('status', ['pending', 'pending_approval']);
+            const { count: aCount } = await supabaseClient.from('enrollments').select('*', { count: 'exact', head: true }).eq('status', 'active');
+            document.getElementById('stat-students').textContent = sCount || 0;
             document.getElementById('stat-courses').textContent = cCount || 0;
-            document.getElementById('stat-lessons').textContent = lCount || 0;
-            document.getElementById('stat-users').textContent = sCount || 0;
-            document.getElementById('stat-pending').textContent = pendingCount;
-            
-            const badge = document.getElementById('badge-pending');
-            if (badge) {
-                if (pendingCount > 0) { badge.textContent = pendingCount; badge.classList.remove('hidden'); }
-                else { badge.classList.add('hidden'); }
-            }
+            document.getElementById('stat-pending').textContent = pCount || 0;
+            document.getElementById('stat-active').textContent = aCount || 0;
         }
 
-        async function loadCourses() {
-            const { data, error } = await supabaseClient.from('courses').select('*');
-            if (error) {
-                console.error("Course fetch error:", error);
-                document.getElementById('course-list').innerHTML = `<p class="text-red-500 text-xs font-bold p-4">Error loading courses</p>`;
-                return;
-            }
-            allCourses = data || [];
-            renderCourseList();
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 3000);
         }
 
-        function renderCourseList() {
-            const list = document.getElementById('course-list');
-            if (allCourses.length === 0) {
-                list.innerHTML = `<p class="text-slate-400 text-xs font-bold p-4 italic">No courses found</p>`;
-                return;
-            }
-            list.innerHTML = allCourses.map(course => `
-                <div onclick="selectCourse('${course.id}', '${course.title.replace(/'/g, "\\'")}')" 
-                    class="p-4 rounded-2xl cursor-pointer border-2 transition-all ${selectedCourseId === course.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-transparent bg-white dark:bg-slate-900 shadow-sm hover:border-slate-200 dark:hover:border-slate-700'}">
-                    <h4 class="font-black text-xs uppercase truncate">${course.title}</h4>
-                    <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase">${course.category || 'Course'}</p>
-                </div>
-            `).join('');
+        // Sidebar and Theme logic
+        let isCollapsed = false;
+        toggleBtn.addEventListener('click', () => {
+            isCollapsed = !isCollapsed;
+            sidebar.classList.toggle('w-64', !isCollapsed); sidebar.classList.toggle('w-20', isCollapsed);
+            logoText.classList.toggle('hidden', isCollapsed); navLabels.forEach(l => l.classList.toggle('hidden', isCollapsed));
+            document.getElementById('toggle-icon').style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            updateIcons();
+        });
+
+        function updateIcons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('sun-icon').classList.toggle('hidden', !isDark);
+            document.getElementById('moon-icon').classList.toggle('hidden', isDark);
         }
 
-        async function selectCourse(id, title) {
-            selectedCourseId = id;
-            document.getElementById('selected-course-name').textContent = title;
-            document.getElementById('no-course-selected').classList.add('hidden');
-            document.getElementById('lesson-header').classList.remove('hidden');
-            document.getElementById('lessons-table-container').classList.remove('hidden');
-            renderCourseList();
-            loadLessons();
-        }
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        });
 
-        async function loadLessons() {
-            const { data } = await supabaseClient.from('lessons').select('*').eq('course_id', selectedCourseId).order('section', { ascending: true });
-            document.getElementById('lessons-tbody').innerHTML = (data || []).map(lesson => `
-                <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                    <td class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase">${lesson.section || '-'}</td>
-                    <td class="px-6 py-4 font-bold text-sm">${lesson.title}</td>
-                    <td class="px-6 py-4 text-right flex justify-end gap-2">
-                        <button onclick='editLesson(${JSON.stringify(lesson)})' class="p-2 text-slate-400 hover:text-emerald-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>
-                        <button onclick="deleteLesson('${lesson.id}')" class="p-2 text-slate-400 hover:text-red-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                    </td>
-                </tr>
-            `).join('') || `<tr><td colspan="3" class="p-8 text-center text-slate-400 italic text-sm">No lessons found.</td></tr>`;
-        }
+        refreshBtn.addEventListener('click', () => switchView(currentView));
 
-        async function loadEnrollments() {
-            const { data } = await supabaseClient.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false });
-            document.getElementById('enrollment-tbody').innerHTML = (data || []).map(e => `
-                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td class="px-8 py-5 text-slate-500 font-mono text-xs">${e.user_id.substring(0, 12)}...</td>
-                    <td class="px-8 py-5 text-slate-700 dark:text-slate-200">${e.courses?.title || 'Unknown Course'}</td>
-                    <td class="px-8 py-5 text-right">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            e.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
-                            e.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                        }">${e.status}</span>
-                    </td>
-                    <td class="px-8 py-5 text-right">
-                        <div class="flex justify-end gap-3">
-                            <button onclick='openEnrollmentEdit(${JSON.stringify(e)})' class="p-2 text-slate-400 hover:text-emerald-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                            <button onclick="deleteEnrollment('${e.id}')" class="p-2 text-slate-400 hover:text-red-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-            loadStats();
-        }
-
-        async function loadStudents() {
-            const { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
-            const tbody = document.getElementById('students-tbody');
-            if (error) { tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">Error: ${error.message}</td></tr>`; return; }
-
-            tbody.innerHTML = (data || []).map(s => `
-                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td class="px-8 py-5">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-xs">${s.full_name ? s.full_name[0] : 'S'}</div>
-                            <span class="font-bold">${s.full_name || 'Anonymous Student'}</span>
-                        </div>
-                    </td>
-                    <td class="px-8 py-5 text-slate-500 text-xs">${s.email || 'N/A'}</td>
-                    <td class="px-8 py-5">
-                        <span class="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded">Active</span>
-                    </td>
-                    <td class="px-8 py-5 text-right">
-                        <button onclick='showStudentDetails(${JSON.stringify(s)})' class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-emerald-600 hover:text-white transition-all">Details</button>
-                    </td>
-                </tr>
-            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No student records found.</td></tr>`;
-            loadStats();
-        }
-
-        // --- Student Detail Functions ---
-        async function showStudentDetails(student) {
-            // Set basic info
-            document.getElementById('student-detail-name').textContent = student.full_name || 'Anonymous Student';
-            document.getElementById('student-detail-email').textContent = student.email || 'No email provided';
-            document.getElementById('student-detail-id').textContent = student.id;
-            document.getElementById('student-avatar-large').textContent = (student.full_name ? student.full_name[0] : 'S');
-            
-            const joinDate = new Date(student.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-            document.getElementById('student-detail-joined').textContent = joinDate;
-
-            // Fetch enrollment history
-            const { data: enrollments, error } = await supabaseClient
-                .from('enrollments')
-                .select('*, courses(title, category)')
-                .eq('user_id', student.id);
-
-            const historyList = document.getElementById('student-enrollment-list');
-            if (error || !enrollments || enrollments.length === 0) {
-                historyList.innerHTML = `<p class="text-xs text-slate-400 italic">No course enrollment history found.</p>`;
-            } else {
-                historyList.innerHTML = enrollments.map(e => `
-                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                        <div>
-                            <p class="font-bold text-sm">${e.courses?.title || 'Unknown Course'}</p>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${e.courses?.category || 'General'}</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
-                                e.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
-                                e.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                            }">${e.status}</span>
-                            <p class="text-[8px] text-slate-400 mt-1">${new Date(e.created_at).toLocaleDateString()}</p>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            document.getElementById('student-modal').classList.remove('hidden');
-        }
-
-        function closeStudentModal() {
-            document.getElementById('student-modal').classList.add('hidden');
-        }
-
-        // --- Other Utility Functions ---
-        function openEnrollmentEdit(e) {
-            document.getElementById('edit-enrollment-id').value = e.id;
-            document.getElementById('edit-enrollment-status').value = e.status;
-            document.getElementById('enrollment-detail-text').textContent = `User: ${e.user_id.substring(0, 8)}... Course: ${e.courses?.title}`;
-            document.getElementById('enrollment-modal').classList.remove('hidden');
-        }
-
-        function closeEnrollmentModal() { document.getElementById('enrollment-modal').classList.add('hidden'); }
-
-        document.getElementById('enrollment-status-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const { error } = await supabaseClient.from('enrollments').update({ status: document.getElementById('edit-enrollment-status').value }).eq('id', document.getElementById('edit-enrollment-id').value);
-            if (!error) { closeEnrollmentModal(); loadEnrollments(); }
-        };
-
-        async function deleteEnrollment(id) {
-            if (confirm('Delete enrollment?')) { await supabaseClient.from('enrollments').delete().eq('id', id); loadEnrollments(); }
-        }
-
-        document.getElementById('lesson-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-lesson-id').value;
-            const payload = {
-                course_id: selectedCourseId,
-                section: document.getElementById('form-section').value,
-                title: document.getElementById('form-title').value,
-                lesson_type: document.getElementById('form-type').value,
-                video_url: document.getElementById('form-url').value
-            };
-            if (id) await supabaseClient.from('lessons').update(payload).eq('id', id);
-            else await supabaseClient.from('lessons').insert([payload]);
-            closeLessonModal(); loadLessons(); loadStats();
-        };
-
-        function showLessonModal() { document.getElementById('lesson-modal').classList.remove('hidden'); }
-        function closeLessonModal() { document.getElementById('lesson-modal').classList.add('hidden'); document.getElementById('lesson-form').reset(); document.getElementById('edit-lesson-id').value = ''; }
-        function editLesson(l) { document.getElementById('edit-lesson-id').value = l.id; document.getElementById('form-section').value = l.section; document.getElementById('form-title').value = l.title; document.getElementById('form-type').value = l.lesson_type; document.getElementById('form-url').value = l.video_url; showLessonModal(); }
-
-        async function deleteLesson(id) {
-            if (confirm('Delete lesson?')) { await supabaseClient.from('lessons').delete().eq('id', id); loadLessons(); loadStats(); }
-        }
-
-        document.getElementById('sidebar-toggle').onclick = () => {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('sidebar-collapsed');
-            document.getElementById('toggle-icon').style.transform = sidebar.classList.contains('sidebar-collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
-        };
-
-        document.getElementById('theme-toggle').onclick = () => document.documentElement.classList.toggle('dark');
-        
-        checkAdmin();
+        // Start Auth Check
+        checkAdminAccess();
     </script>
 </body>
 </html>
