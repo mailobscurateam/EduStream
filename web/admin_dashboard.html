@@ -214,6 +214,59 @@
     </div>
 
     <!-- Modals -->
+    
+    <!-- Student Detail Modal (New) -->
+    <div id="student-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-6">
+        <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onclick="closeStudentModal()"></div>
+        <div class="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start shrink-0">
+                <div class="flex items-center gap-5">
+                    <div id="student-avatar-large" class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-2xl"></div>
+                    <div>
+                        <h3 id="student-detail-name" class="text-2xl font-black tracking-tight">Student Name</h3>
+                        <p id="student-detail-email" class="text-sm text-slate-400 font-bold"></p>
+                    </div>
+                </div>
+                <button onclick="closeStudentModal()" class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+                <!-- Data Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Joined Date</p>
+                        <p id="student-detail-joined" class="font-bold text-sm">--/--/--</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Account ID</p>
+                        <p id="student-detail-id" class="font-bold text-[10px] text-slate-500 truncate">--</p>
+                    </div>
+                    <div class="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
+                        <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Status</p>
+                        <p class="font-black text-sm text-emerald-700 uppercase">Active</p>
+                    </div>
+                </div>
+
+                <!-- Course History -->
+                <div class="space-y-4">
+                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                        Enrollment History
+                    </h4>
+                    <div id="student-enrollment-list" class="space-y-2">
+                        <!-- Items injected here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 shrink-0 flex justify-end">
+                <button onclick="closeStudentModal()" class="px-8 py-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest">Done</button>
+            </div>
+        </div>
+    </div>
+
     <div id="lesson-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6">
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeLessonModal()"></div>
         <div class="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 p-8">
@@ -422,13 +475,59 @@
                         <span class="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded">Active</span>
                     </td>
                     <td class="px-8 py-5 text-right">
-                        <button onclick="alert('Student ID: ${s.id}')" class="text-xs font-bold text-emerald-600 hover:underline">Details</button>
+                        <button onclick='showStudentDetails(${JSON.stringify(s)})' class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-xs font-black uppercase tracking-wider rounded-xl hover:bg-emerald-600 hover:text-white transition-all">Details</button>
                     </td>
                 </tr>
             `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No student records found.</td></tr>`;
             loadStats();
         }
 
+        // --- Student Detail Functions ---
+        async function showStudentDetails(student) {
+            // Set basic info
+            document.getElementById('student-detail-name').textContent = student.full_name || 'Anonymous Student';
+            document.getElementById('student-detail-email').textContent = student.email || 'No email provided';
+            document.getElementById('student-detail-id').textContent = student.id;
+            document.getElementById('student-avatar-large').textContent = (student.full_name ? student.full_name[0] : 'S');
+            
+            const joinDate = new Date(student.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            document.getElementById('student-detail-joined').textContent = joinDate;
+
+            // Fetch enrollment history
+            const { data: enrollments, error } = await supabaseClient
+                .from('enrollments')
+                .select('*, courses(title, category)')
+                .eq('user_id', student.id);
+
+            const historyList = document.getElementById('student-enrollment-list');
+            if (error || !enrollments || enrollments.length === 0) {
+                historyList.innerHTML = `<p class="text-xs text-slate-400 italic">No course enrollment history found.</p>`;
+            } else {
+                historyList.innerHTML = enrollments.map(e => `
+                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <div>
+                            <p class="font-bold text-sm">${e.courses?.title || 'Unknown Course'}</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${e.courses?.category || 'General'}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                                e.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
+                                e.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                            }">${e.status}</span>
+                            <p class="text-[8px] text-slate-400 mt-1">${new Date(e.created_at).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('student-modal').classList.remove('hidden');
+        }
+
+        function closeStudentModal() {
+            document.getElementById('student-modal').classList.add('hidden');
+        }
+
+        // --- Other Utility Functions ---
         function openEnrollmentEdit(e) {
             document.getElementById('edit-enrollment-id').value = e.id;
             document.getElementById('edit-enrollment-status').value = e.status;
