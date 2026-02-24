@@ -68,12 +68,12 @@
             </button>
             <button onclick="switchTab('students')" id="nav-students" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-sm text-left">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                <span class="nav-text">User Management</span>
+                <span class="nav-text">Student Management</span>
             </button>
             <div class="h-px bg-slate-100 dark:bg-slate-800 my-4"></div>
             <a href="dashboard.html" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-400 hover:text-emerald-500 transition-all font-bold text-sm">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                <span class="nav-text">Back to Student View</span>
+                <span class="nav-text">Back to Home</span>
             </a>
         </nav>
 
@@ -113,7 +113,7 @@
                     <h3 id="stat-pending" class="text-3xl font-black text-amber-500">0</h3>
                 </div>
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Users</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Students</p>
                     <h3 id="stat-users" class="text-3xl font-black">0</h3>
                 </div>
             </div>
@@ -156,7 +156,7 @@
                     <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <div>
                             <h3 class="text-lg font-black uppercase tracking-tight">Course Enrollments</h3>
-                            <p class="text-xs text-slate-400 font-bold mt-1">Showing all history: Pending, Approved, and Rejected</p>
+                            <p class="text-xs text-slate-400 font-bold mt-1">Pending approval for student access</p>
                         </div>
                         <button onclick="loadEnrollments()" class="p-2 text-slate-400 hover:text-emerald-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"/></svg>
@@ -183,8 +183,8 @@
                 <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                     <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg font-black uppercase tracking-tight">User Directory</h3>
-                            <p class="text-xs text-slate-400 font-bold mt-1">List of all registered accounts in the system</p>
+                            <h3 class="text-lg font-black uppercase tracking-tight">Student Directory</h3>
+                            <p class="text-xs text-slate-400 font-bold mt-1">List of all registered students</p>
                         </div>
                         <button onclick="loadStudents()" class="p-2 text-slate-400 hover:text-emerald-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"/></svg>
@@ -194,9 +194,9 @@
                         <table class="w-full text-left">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                    <th class="px-8 py-4">Name / ID</th>
-                                    <th class="px-8 py-4">Email / Info</th>
-                                    <th class="px-8 py-4">Last Active</th>
+                                    <th class="px-8 py-4">Student Name</th>
+                                    <th class="px-8 py-4">Email Address</th>
+                                    <th class="px-8 py-4">Status</th>
                                     <th class="px-8 py-4 text-right">Action</th>
                                 </tr>
                             </thead>
@@ -213,28 +213,28 @@
     <div id="lesson-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6">
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeLessonModal()"></div>
         <div class="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 p-8">
-            <h3 class="text-2xl font-black mb-6">Lesson Data</h3>
+            <h3 class="text-2xl font-black mb-6">Lesson Editor</h3>
             <form id="lesson-form" class="space-y-4">
                 <input type="hidden" id="edit-lesson-id">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Module Name</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Section/Module</label>
                         <input type="text" id="form-section" placeholder="Module 1" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Type</label>
                         <select id="form-type" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <option value="video">Video</option>
-                            <option value="link">Link</option>
+                            <option value="video">Video (YouTube ID)</option>
+                            <option value="link">Resource Link</option>
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Lesson Title</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Title</label>
                     <input type="text" id="form-title" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Video ID / Resource URL</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">URL / Video ID</label>
                     <input type="text" id="form-url" required class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
@@ -249,8 +249,8 @@
     <div id="enrollment-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-6">
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeEnrollmentModal()"></div>
         <div class="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 p-8">
-            <h3 class="text-xl font-black mb-4">Edit Enrollment</h3>
-            <p id="enrollment-detail-text" class="text-xs text-slate-400 font-bold mb-6">Updating status for user...</p>
+            <h3 class="text-xl font-black mb-4">Update Status</h3>
+            <p id="enrollment-detail-text" class="text-xs text-slate-400 font-bold mb-6">Updating enrollment status...</p>
             
             <form id="enrollment-status-form" class="space-y-6">
                 <input type="hidden" id="edit-enrollment-id">
@@ -262,11 +262,7 @@
                         <option value="rejected">Rejected</option>
                     </select>
                 </div>
-                
-                <div class="flex flex-col gap-2">
-                    <button type="submit" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-sm">Update Status</button>
-                    <button type="button" onclick="closeEnrollmentModal()" class="w-full py-3 font-bold text-slate-500 text-sm">Dismiss</button>
-                </div>
+                <button type="submit" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-sm">Update Now</button>
             </form>
         </div>
     </div>
@@ -283,27 +279,14 @@
         async function checkAdmin() {
             try {
                 const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) {
-                    window.location.href = 'index.html';
-                    return;
-                }
+                if (!user) { window.location.href = 'index.html'; return; }
 
-                const { data: profile, error } = await supabaseClient
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', user.id)
-                    .single();
-
-                if (error || !profile || profile.role !== 'admin') {
-                    window.location.href = 'dashboard.html';
-                    return;
-                }
+                const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+                if (!profile || profile.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
 
                 document.getElementById('auth-guard').style.display = 'none';
                 init();
-            } catch (err) {
-                window.location.href = 'index.html';
-            }
+            } catch (err) { window.location.href = 'index.html'; }
         }
 
         async function init() {
@@ -317,37 +300,30 @@
             document.getElementById('section-content').classList.toggle('hidden', tab !== 'content');
             document.getElementById('section-approvals').classList.toggle('hidden', tab !== 'approvals');
             document.getElementById('section-students').classList.toggle('hidden', tab !== 'students');
-            
             document.getElementById('nav-content').classList.toggle('nav-item-active', tab === 'content');
             document.getElementById('nav-approvals').classList.toggle('nav-item-active', tab === 'approvals');
             document.getElementById('nav-students').classList.toggle('nav-item-active', tab === 'students');
-            
-            const titles = {
-                'content': 'Content Manager',
-                'approvals': 'Enrollment Approvals',
-                'students': 'User Management'
-            };
+            const titles = { 'content': 'Content Manager', 'approvals': 'Enrollment Approvals', 'students': 'Student Management' };
             document.getElementById('page-title').textContent = titles[tab];
         }
 
         document.getElementById('sidebar-toggle').onclick = () => {
             const sidebar = document.getElementById('sidebar');
-            const icon = document.getElementById('toggle-icon');
             sidebar.classList.toggle('sidebar-collapsed');
-            icon.style.transform = sidebar.classList.contains('sidebar-collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
+            document.getElementById('toggle-icon').style.transform = sidebar.classList.contains('sidebar-collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
         };
 
         async function loadStats() {
             const { count: cCount } = await supabaseClient.from('courses').select('*', { count: 'exact', head: true });
             const { count: lCount } = await supabaseClient.from('lessons').select('*', { count: 'exact', head: true });
-            // Show all user count without filtering by student role
-            const { count: uCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true });
+            // Fetching specifically from the students table
+            const { count: sCount } = await supabaseClient.from('students').select('*', { count: 'exact', head: true });
             const { data: eData } = await supabaseClient.from('enrollments').select('status');
 
             const pendingCount = eData ? eData.filter(e => e.status === 'pending').length : 0;
             document.getElementById('stat-courses').textContent = cCount || 0;
             document.getElementById('stat-lessons').textContent = lCount || 0;
-            document.getElementById('stat-users').textContent = uCount || 0;
+            document.getElementById('stat-users').textContent = sCount || 0;
             document.getElementById('stat-pending').textContent = pendingCount;
             
             const badge = document.getElementById('badge-pending');
@@ -361,8 +337,7 @@
 
         async function loadCourses() {
             const { data } = await supabaseClient.from('courses').select('*').order('updated_at', { ascending: false });
-            const list = document.getElementById('course-list');
-            list.innerHTML = data.map(course => `
+            document.getElementById('course-list').innerHTML = data.map(course => `
                 <div onclick="selectCourse('${course.id}', '${course.title}')" 
                     class="p-4 rounded-2xl cursor-pointer border-2 transition-all ${selectedCourseId === course.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-transparent bg-white dark:bg-slate-900 shadow-sm hover:border-slate-200 dark:hover:border-slate-700'}">
                     <h4 class="font-black text-xs uppercase truncate">${course.title}</h4>
@@ -382,8 +357,7 @@
 
         async function loadLessons() {
             const { data } = await supabaseClient.from('lessons').select('*').eq('course_id', selectedCourseId).order('section', { ascending: true });
-            const tbody = document.getElementById('lessons-tbody');
-            tbody.innerHTML = data.map(lesson => `
+            document.getElementById('lessons-tbody').innerHTML = data.map(lesson => `
                 <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/30">
                     <td class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase">${lesson.section || '-'}</td>
                     <td class="px-6 py-4 font-bold text-sm">${lesson.title}</td>
@@ -396,10 +370,8 @@
         }
 
         async function loadEnrollments() {
-            const { data: enrollments } = await supabaseClient.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false });
-            const tbody = document.getElementById('enrollment-tbody');
-            
-            tbody.innerHTML = enrollments.map(e => `
+            const { data } = await supabaseClient.from('enrollments').select('*, courses(title)').order('created_at', { ascending: false });
+            document.getElementById('enrollment-tbody').innerHTML = data.map(e => `
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                     <td class="px-8 py-5 text-slate-500 font-mono text-xs">${e.user_id.substring(0, 12)}...</td>
                     <td class="px-8 py-5 text-slate-700 dark:text-slate-200">${e.courses?.title || 'Unknown Course'}</td>
@@ -410,101 +382,61 @@
                         }">${e.status}</span>
                     </td>
                     <td class="px-8 py-5 text-right">
-                        <div class="flex justify-end items-center gap-3">
-                            <button onclick='openEnrollmentEdit(${JSON.stringify(e)})' class="p-2 text-slate-400 hover:text-emerald-500 transition-colors" title="Edit Status">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                            </button>
-                            <div class="w-px h-4 bg-slate-200 dark:bg-slate-800"></div>
-                            <button onclick="deleteEnrollment('${e.id}')" class="p-2 text-slate-400 hover:text-red-500 transition" title="Delete Enrollment">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            </button>
+                        <div class="flex justify-end gap-3">
+                            <button onclick='openEnrollmentEdit(${JSON.stringify(e)})' class="p-2 text-slate-400 hover:text-emerald-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                            <button onclick="deleteEnrollment('${e.id}')" class="p-2 text-slate-400 hover:text-red-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                         </div>
                     </td>
                 </tr>
-            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No enrollment records found.</td></tr>`;
+            `).join('');
             loadStats();
         }
 
         async function loadStudents() {
-            // Removed role = student filter to show all user profiles
-            const { data: students, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .order('updated_at', { ascending: false });
-
+            // Fetching specifically from the students table as requested
+            const { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
             const tbody = document.getElementById('students-tbody');
-            if (error) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">Error loading users: ${error.message}</td></tr>`;
-                return;
-            }
+            if (error) { tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">Error: ${error.message}</td></tr>`; return; }
 
-            tbody.innerHTML = students.map(s => `
+            tbody.innerHTML = data.map(s => `
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                     <td class="px-8 py-5">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-[10px] text-slate-400">
-                                ${s.full_name ? s.full_name.charAt(0) : '?'}
-                            </div>
-                            <div>
-                                <p class="font-bold text-slate-900 dark:text-slate-100">${s.full_name || 'Anonymous User'}</p>
-                                <p class="text-[10px] font-mono text-slate-400">${s.id.substring(0, 12)}...</p>
-                            </div>
+                            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-xs">${s.full_name ? s.full_name[0] : 'S'}</div>
+                            <span class="font-bold">${s.full_name || 'Anonymous Student'}</span>
                         </div>
                     </td>
+                    <td class="px-8 py-5 text-slate-500 text-xs">${s.email || 'N/A'}</td>
                     <td class="px-8 py-5">
-                        <p class="text-xs text-slate-600 dark:text-slate-400 font-medium">${s.email || 'No email linked'}</p>
-                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Role: ${s.role}</p>
-                    </td>
-                    <td class="px-8 py-5 text-slate-500 text-xs">
-                        ${s.updated_at ? new Date(s.updated_at).toLocaleDateString() : 'N/A'}
+                        <span class="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded">Active</span>
                     </td>
                     <td class="px-8 py-5 text-right">
-                        <button onclick="alert('Management features for individual accounts coming soon.')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 rounded-lg transition text-[10px] font-black uppercase">Manage</button>
+                        <button onclick="alert('Student ID: ${s.id}')" class="text-xs font-bold text-emerald-600 hover:underline">Details</button>
                     </td>
                 </tr>
-            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No users found in directory.</td></tr>`;
+            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No student records found in table.</td></tr>`;
             loadStats();
         }
 
-        // Enrollment Status Update Handling
-        function openEnrollmentEdit(enrollment) {
-            document.getElementById('edit-enrollment-id').value = enrollment.id;
-            document.getElementById('edit-enrollment-status').value = enrollment.status;
-            document.getElementById('enrollment-detail-text').textContent = `Updating status for user: ${enrollment.user_id.substring(0, 8)}... (${enrollment.courses?.title})`;
+        function openEnrollmentEdit(e) {
+            document.getElementById('edit-enrollment-id').value = e.id;
+            document.getElementById('edit-enrollment-status').value = e.status;
+            document.getElementById('enrollment-detail-text').textContent = `User: ${e.user_id.substring(0, 8)}... Course: ${e.courses?.title}`;
             document.getElementById('enrollment-modal').classList.remove('hidden');
         }
 
-        function closeEnrollmentModal() {
-            document.getElementById('enrollment-modal').classList.add('hidden');
-            document.getElementById('enrollment-status-form').reset();
-        }
+        function closeEnrollmentModal() { document.getElementById('enrollment-modal').classList.add('hidden'); }
 
         document.getElementById('enrollment-status-form').onsubmit = async (e) => {
             e.preventDefault();
-            const id = document.getElementById('edit-enrollment-id').value;
-            const status = document.getElementById('edit-enrollment-status').value;
-            
-            const { error } = await supabaseClient
-                .from('enrollments')
-                .update({ status })
-                .eq('id', id);
-
-            if (error) {
-                console.error("Update failed", error);
-            } else {
-                closeEnrollmentModal();
-                loadEnrollments();
-            }
+            const { error } = await supabaseClient.from('enrollments').update({ status: document.getElementById('edit-enrollment-status').value }).eq('id', document.getElementById('edit-enrollment-id').value);
+            if (!error) { closeEnrollmentModal(); loadEnrollments(); }
         };
 
         async function deleteEnrollment(id) {
-            if (confirm('Permanently delete this enrollment record?')) {
-                await supabaseClient.from('enrollments').delete().eq('id', id);
-                loadEnrollments();
-            }
+            if (confirm('Delete enrollment?')) { await supabaseClient.from('enrollments').delete().eq('id', id); loadEnrollments(); }
         }
 
-        // Lesson Handling
         document.getElementById('lesson-form').onsubmit = async (e) => {
             e.preventDefault();
             const id = document.getElementById('edit-lesson-id').value;
@@ -517,36 +449,18 @@
             };
             if (id) await supabaseClient.from('lessons').update(payload).eq('id', id);
             else await supabaseClient.from('lessons').insert([payload]);
-            closeLessonModal();
-            loadLessons();
-            loadStats();
+            closeLessonModal(); loadLessons(); loadStats();
         };
 
         function showLessonModal() { document.getElementById('lesson-modal').classList.remove('hidden'); }
-        function closeLessonModal() { 
-            document.getElementById('lesson-modal').classList.add('hidden'); 
-            document.getElementById('lesson-form').reset(); 
-            document.getElementById('edit-lesson-id').value = '';
-        }
-        function editLesson(l) { 
-            document.getElementById('edit-lesson-id').value = l.id;
-            document.getElementById('form-section').value = l.section;
-            document.getElementById('form-title').value = l.title;
-            document.getElementById('form-type').value = l.lesson_type;
-            document.getElementById('form-url').value = l.video_url;
-            showLessonModal();
-        }
+        function closeLessonModal() { document.getElementById('lesson-modal').classList.add('hidden'); document.getElementById('lesson-form').reset(); document.getElementById('edit-lesson-id').value = ''; }
+        function editLesson(l) { document.getElementById('edit-lesson-id').value = l.id; document.getElementById('form-section').value = l.section; document.getElementById('form-title').value = l.title; document.getElementById('form-type').value = l.lesson_type; document.getElementById('form-url').value = l.video_url; showLessonModal(); }
 
         async function deleteLesson(id) {
-            if (confirm('Delete this lesson permanently?')) {
-                await supabaseClient.from('lessons').delete().eq('id', id);
-                loadLessons();
-                loadStats();
-            }
+            if (confirm('Delete lesson?')) { await supabaseClient.from('lessons').delete().eq('id', id); loadLessons(); loadStats(); }
         }
 
         document.getElementById('theme-toggle').onclick = () => document.documentElement.classList.toggle('dark');
-        
         checkAdmin();
     </script>
 </body>
