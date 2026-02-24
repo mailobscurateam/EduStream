@@ -66,6 +66,10 @@
                     <span id="badge-pending" class="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
                 </div>
             </button>
+            <button onclick="switchTab('students')" id="nav-students" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-sm text-left">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <span class="nav-text">Student Management</span>
+            </button>
             <div class="h-px bg-slate-100 dark:bg-slate-800 my-4"></div>
             <a href="dashboard.html" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-400 hover:text-emerald-500 transition-all font-bold text-sm">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
@@ -169,6 +173,34 @@
                                 </tr>
                             </thead>
                             <tbody id="enrollment-tbody" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Student Management -->
+            <section id="section-students" class="hidden space-y-6">
+                <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-black uppercase tracking-tight">Student Directory</h3>
+                            <p class="text-xs text-slate-400 font-bold mt-1">List of all registered students in the system</p>
+                        </div>
+                        <button onclick="loadStudents()" class="p-2 text-slate-400 hover:text-emerald-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                                    <th class="px-8 py-4">Name / ID</th>
+                                    <th class="px-8 py-4">Email / Info</th>
+                                    <th class="px-8 py-4">Joined Date</th>
+                                    <th class="px-8 py-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-tbody" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm font-medium"></tbody>
                         </table>
                     </div>
                 </div>
@@ -278,14 +310,24 @@
             loadStats();
             loadCourses();
             loadEnrollments();
+            loadStudents();
         }
 
         function switchTab(tab) {
             document.getElementById('section-content').classList.toggle('hidden', tab !== 'content');
             document.getElementById('section-approvals').classList.toggle('hidden', tab !== 'approvals');
+            document.getElementById('section-students').classList.toggle('hidden', tab !== 'students');
+            
             document.getElementById('nav-content').classList.toggle('nav-item-active', tab === 'content');
             document.getElementById('nav-approvals').classList.toggle('nav-item-active', tab === 'approvals');
-            document.getElementById('page-title').textContent = tab === 'content' ? 'Content Manager' : 'Enrollment Approvals';
+            document.getElementById('nav-students').classList.toggle('nav-item-active', tab === 'students');
+            
+            const titles = {
+                'content': 'Content Manager',
+                'approvals': 'Enrollment Approvals',
+                'students': 'Student Management'
+            };
+            document.getElementById('page-title').textContent = titles[tab];
         }
 
         document.getElementById('sidebar-toggle').onclick = () => {
@@ -298,7 +340,7 @@
         async function loadStats() {
             const { count: cCount } = await supabaseClient.from('courses').select('*', { count: 'exact', head: true });
             const { count: lCount } = await supabaseClient.from('lessons').select('*', { count: 'exact', head: true });
-            const { count: uCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true });
+            const { count: uCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
             const { data: eData } = await supabaseClient.from('enrollments').select('status');
 
             const pendingCount = eData ? eData.filter(e => e.status === 'pending').length : 0;
@@ -382,6 +424,47 @@
             loadStats();
         }
 
+        async function loadStudents() {
+            const { data: students, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('role', 'student')
+                .order('created_at', { ascending: false });
+
+            const tbody = document.getElementById('students-tbody');
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">Error loading students.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = students.map(s => `
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="px-8 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-[10px] text-slate-400">
+                                ${s.full_name ? s.full_name.charAt(0) : '?'}
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900 dark:text-slate-100">${s.full_name || 'Anonymous User'}</p>
+                                <p class="text-[10px] font-mono text-slate-400">${s.id.substring(0, 12)}...</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <p class="text-xs text-slate-600 dark:text-slate-400 font-medium">${s.email || 'No email linked'}</p>
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Role: ${s.role}</p>
+                    </td>
+                    <td class="px-8 py-5 text-slate-500 text-xs">
+                        ${new Date(s.created_at).toLocaleDateString()}
+                    </td>
+                    <td class="px-8 py-5 text-right">
+                        <button onclick="alert('Management features for individual accounts coming soon.')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 rounded-lg transition text-[10px] font-black uppercase">Manage</button>
+                    </td>
+                </tr>
+            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No students found in directory.</td></tr>`;
+            loadStats();
+        }
+
         // Enrollment Status Update Handling
         function openEnrollmentEdit(enrollment) {
             document.getElementById('edit-enrollment-id').value = enrollment.id;
@@ -412,11 +495,6 @@
                 loadEnrollments();
             }
         };
-
-        async function updateStatus(id, status) {
-            await supabaseClient.from('enrollments').update({ status }).eq('id', id);
-            loadEnrollments();
-        }
 
         async function deleteEnrollment(id) {
             if (confirm('Permanently delete this enrollment record?')) {
