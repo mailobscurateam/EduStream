@@ -6,13 +6,15 @@
     <title>Playing Lesson | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
     
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
         
-        .video-container { 
+        .video-wrapper { 
             aspect-ratio: 16 / 9; 
             position: relative; 
             overflow: hidden; 
@@ -20,40 +22,65 @@
             border-radius: 0.5rem;
         }
         
-        /* Interaction Shield: Blocks right-clicks and direct YT interactions */
+        /* Blocks standard YouTube context menu and interactions */
         .video-interaction-shield {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: calc(100% - 50px); /* Leave bottom bar area slightly reachable if needed, or set to 100% to block all */
+            height: calc(100% - 60px); 
             z-index: 10;
             background: transparent;
+            cursor: pointer;
         }
 
         #video-watermark {
             position: absolute;
             z-index: 20;
             pointer-events: none;
-            color: rgba(255, 255, 255, 0.25);
+            color: rgba(255, 255, 255, 0.2);
             font-size: 11px;
             font-weight: bold;
             text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
             user-select: none;
             padding: 10px;
-            transition: all 1s ease-in-out;
-            white-space: nowrap;
+            transition: all 1.5s ease-in-out;
         }
 
-        #security-lockout {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: #000;
-            z-index: 9999;
+        .custom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .video-wrapper:hover .custom-controls {
+            opacity: 1;
+        }
+
+        .control-btn {
             color: white;
-            text-align: center;
-            padding-top: 20vh;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        input[type=range] {
+            accent-color: #10b981;
+            cursor: pointer;
         }
     </style>
     <script>
@@ -65,44 +92,9 @@
                 }
             }
         };
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-
-        (function() {
-            const triggerLockout = () => {
-                const redirectPath = "kakahanalana.html";
-                try {
-                    window.location.replace(redirectPath);
-                } catch (e) {
-                    window.location.href = redirectPath;
-                }
-            };
-
-            const detectDevTools = () => {
-                const threshold = 160;
-                const isWindowSmall = (window.outerWidth - window.innerWidth > threshold) || 
-                                    (window.outerHeight - window.innerHeight > threshold);
-                if (isWindowSmall) triggerLockout();
-            };
-
-            window.addEventListener('resize', detectDevTools);
-            document.addEventListener('contextmenu', e => e.preventDefault());
-            document.addEventListener('keydown', e => {
-                if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85)) {
-                    triggerLockout();
-                    e.preventDefault();
-                }
-            });
-        })();
     </script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 flex flex-col">
-
-    <div id="security-lockout">
-        <h2 class="text-2xl font-bold">Unauthorized Access</h2>
-        <p class="mt-4 text-slate-400">Security violation detected.</p>
-    </div>
 
     <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16 flex items-center shrink-0 z-50">
         <div class="max-w-full w-full px-6 flex items-center justify-between">
@@ -110,44 +102,60 @@
                 <a href="dashboard.html" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition text-slate-500">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 </a>
-                <h1 id="nav-course-title" class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md uppercase tracking-wider">Loading...</h1>
+                <h1 id="nav-course-title" class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] uppercase tracking-wider">Loading...</h1>
             </div>
-            <div class="flex items-center gap-4">
-                <div id="progress-container" class="hidden md:flex flex-col items-end mr-4">
-                    <span class="text-[10px] text-slate-500 font-bold uppercase">Course Progress</span>
-                    <div class="w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mt-1">
-                        <div id="progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                </div>
-                <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                </button>
-            </div>
+            <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden">
         <main class="flex-1 overflow-y-auto custom-scrollbar">
             <div id="player-view" class="hidden">
-                <div class="bg-black w-full video-container relative">
-                    <!-- Standard YouTube Iframe -->
-                    <iframe 
-                        id="yt-iframe"
-                        class="w-full h-full"
-                        src="" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                        referrerpolicy="strict-origin-when-cross-origin" 
-                        allowfullscreen>
-                    </iframe>
+                <div id="video-container-main" class="video-wrapper">
+                    <!-- YouTube Iframe -->
+                    <div id="yt-player" class="w-full h-full"></div>
                     
                     <!-- Interaction Shield -->
-                    <div class="video-interaction-shield"></div>
+                    <div id="shield" class="video-interaction-shield"></div>
                     
-                    <!-- Floating Watermark -->
-                    <div id="video-watermark">EDU-USER-SECURE</div>
+                    <!-- Watermark -->
+                    <div id="video-watermark">SECURE STREAM</div>
 
-                    <div id="video-loader" class="absolute inset-0 bg-black flex items-center justify-center z-10">
+                    <!-- Custom Control Bar -->
+                    <div class="custom-controls">
+                        <!-- Play/Pause -->
+                        <button id="play-pause-btn" class="control-btn">
+                            <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        </button>
+
+                        <!-- Volume -->
+                        <div class="flex items-center gap-2 group/vol">
+                            <button id="mute-btn" class="control-btn">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                            </button>
+                            <input id="volume-slider" type="range" min="0" max="100" value="100" class="w-0 group-hover/vol:w-20 transition-all duration-300">
+                        </div>
+
+                        <!-- Speed -->
+                        <div class="ml-auto flex items-center gap-4">
+                            <select id="speed-selector" class="bg-transparent text-white text-xs font-bold border border-white/20 rounded px-2 py-1 outline-none">
+                                <option value="0.5" class="bg-black">0.5x</option>
+                                <option value="1" class="bg-black" selected>1x</option>
+                                <option value="1.5" class="bg-black">1.5x</option>
+                                <option value="2" class="bg-black">2x</option>
+                            </select>
+
+                            <!-- Fullscreen -->
+                            <button id="fs-btn" class="control-btn">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="video-loader" class="absolute inset-0 bg-black flex items-center justify-center z-40">
                         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
                     </div>
                 </div>
@@ -156,32 +164,19 @@
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                         <div>
                             <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest mb-2 block">Lesson</span>
-                            <h2 id="lesson-title" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white leading-tight">...</h2>
+                            <h2 id="lesson-title" class="text-2xl font-black text-slate-900 dark:text-white leading-tight">...</h2>
                         </div>
                         <div class="flex items-center gap-3">
-                            <button id="prev-lesson" class="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm disabled:opacity-30">Previous</button>
-                            <button id="next-lesson" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/30">Next Lesson</button>
+                            <button id="prev-lesson" class="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 rounded-2xl font-bold disabled:opacity-30">Previous</button>
+                            <button id="next-lesson" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-600/30">Next Lesson</button>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 border-t border-slate-200 dark:border-slate-800 pt-8">
-                        <div class="md:col-span-2">
-                            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Description</h3>
-                            <p id="lesson-desc" class="text-slate-600 dark:text-slate-400 leading-relaxed"></p>
-                        </div>
-                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
-                            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Resources</h3>
-                            <div id="resources-list" class="space-y-3">
-                                <p class="text-xs text-slate-500 italic">No resources provided.</p>
-                            </div>
-                        </div>
-                    </div>
+                    <p id="lesson-desc" class="text-slate-600 dark:text-slate-400 leading-relaxed"></p>
                 </div>
             </div>
 
             <div id="loading-overlay" class="h-full w-full flex flex-col items-center justify-center py-20">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-                <p class="text-slate-500 font-medium">Preparing secure stream...</p>
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
             </div>
         </main>
 
@@ -200,159 +195,155 @@
         };
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        let player;
         let currentLessons = [];
-        let currentCourse = null;
-        let currentUser = null;
+        let isPlayerReady = false;
 
+        // Extract YT ID
         function getYouTubeId(url) {
-            if (!url) return null;
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
+            const match = url?.match(regExp);
             return (match && match[2].length === 11) ? match[2] : url;
+        }
+
+        // YouTube API Ready
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('yt-player', {
+                height: '100%',
+                width: '100%',
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 0, // Disable native controls
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'iv_load_policy': 3,
+                    'disablekb': 1
+                },
+                events: {
+                    'onReady': () => { 
+                        isPlayerReady = true; 
+                        document.getElementById('video-loader').classList.add('hidden');
+                        init(); 
+                    },
+                    'onStateChange': (event) => {
+                        const playIcon = document.getElementById('play-icon');
+                        const pauseIcon = document.getElementById('pause-icon');
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            playIcon.classList.add('hidden');
+                            pauseIcon.classList.remove('hidden');
+                        } else {
+                            playIcon.classList.remove('hidden');
+                            pauseIcon.classList.add('hidden');
+                        }
+                    }
+                }
+            });
         }
 
         async function init() {
             const courseId = sessionStorage.getItem('current_course_id');
             const lessonId = sessionStorage.getItem('current_lesson_id');
+            if (!courseId || !lessonId) return;
 
-            if (!courseId || !lessonId) {
-                window.location.href = 'course.html';
-                return;
-            }
-
-            try {
-                const { data: { user }, error: authErr } = await supabaseClient.auth.getUser();
-                if (!user || authErr) throw new Error('Not authenticated');
-                currentUser = user;
-
-                const watermark = document.getElementById('video-watermark');
-                watermark.textContent = `EduStream | ID: ${user.id.substring(0, 8)} | ${user.email}`;
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                document.getElementById('video-watermark').textContent = `SECURE STREAM | ${user.email}`;
                 startWatermarkMovement();
-
-                const { data: enrollment, error: enrollErr } = await supabaseClient
-                    .from('enrollments')
-                    .select('status')
-                    .eq('course_id', courseId)
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (enrollErr || enrollment.status !== 'approved') {
-                    alert("Enrollment not approved.");
-                    window.location.href = 'course.html';
-                    return;
-                }
-
-                const [courseRes, lessonsRes] = await Promise.all([
-                    supabaseClient.from('courses').select('*').eq('id', courseId).single(),
-                    supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
-                ]);
-
-                currentCourse = courseRes.data;
-                currentLessons = lessonsRes.data;
-
-                renderCurriculum();
-                loadLesson(lessonId);
-
-                // Hide loader once iframe loads
-                document.getElementById('yt-iframe').onload = () => {
-                    document.getElementById('video-loader').classList.add('hidden');
-                };
-
-            } catch (err) {
-                console.error("Init Error:", err);
             }
+
+            const [cRes, lRes] = await Promise.all([
+                supabaseClient.from('courses').select('*').eq('id', courseId).single(),
+                supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
+            ]);
+
+            currentLessons = lRes.data;
+            document.getElementById('nav-course-title').textContent = cRes.data.title;
+            renderCurriculum();
+            loadLesson(lessonId);
         }
 
-        function startWatermarkMovement() {
-            const watermark = document.getElementById('video-watermark');
-            const positions = [
-                { top: '5%', left: '5%' },
-                { top: '5%', left: '75%' },
-                { top: '85%', left: '5%' },
-                { top: '85%', left: '75%' },
-                { top: '40%', left: '40%' }
-            ];
-            let currentIdx = 0;
-            setInterval(() => {
-                currentIdx = (currentIdx + 1) % positions.length;
-                watermark.style.top = positions[currentIdx].top;
-                watermark.style.left = positions[currentIdx].left;
-            }, 8000);
-        }
+        function loadLesson(id) {
+            const lesson = currentLessons.find(l => l.id === id);
+            if (!lesson || !player) return;
 
-        function renderCurriculum() {
-            if (!currentCourse) return;
-            document.getElementById('nav-course-title').textContent = currentCourse.title;
-            const sidebar = document.getElementById('sidebar-list');
-            const activeId = sessionStorage.getItem('current_lesson_id');
-            
-            sidebar.innerHTML = currentLessons.map((lesson, idx) => {
-                const isActive = lesson.id === activeId;
-                return `
-                    <div onclick="loadLesson('${lesson.id}')" class="group flex items-start gap-3 p-3 rounded-xl transition-all cursor-pointer ${isActive ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent'}">
-                        <div class="shrink-0 w-6 h-6 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'} flex items-center justify-center text-[10px] font-bold">
-                            ${idx + 1}
-                        </div>
-                        <div class="flex-grow min-w-0">
-                            <h4 class="text-xs font-bold ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'} truncate">${lesson.title}</h4>
-                            <span class="text-[10px] text-slate-400 font-medium">${lesson.duration || '5:00'}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function loadLesson(lessonId) {
-            const lesson = currentLessons.find(l => l.id === lessonId);
-            if (!lesson) return;
-
-            document.getElementById('player-view').classList.add('hidden');
-            document.getElementById('loading-overlay').classList.remove('hidden');
-            
-            sessionStorage.setItem('current_lesson_id', lessonId);
+            sessionStorage.setItem('current_lesson_id', id);
             const idx = currentLessons.indexOf(lesson);
 
             document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
             document.getElementById('lesson-title').textContent = lesson.title;
             document.getElementById('lesson-desc').textContent = lesson.description || '';
-            
-            const loader = document.getElementById('video-loader');
-            loader.classList.remove('hidden');
 
             const ytId = getYouTubeId(lesson.video_url);
-            // Constructing iframe src with modest branding and no related videos
-            const iframeSrc = `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&autoplay=1`;
-            document.getElementById('yt-iframe').src = iframeSrc;
+            player.loadVideoById(ytId);
 
-            const progress = ((idx + 1) / currentLessons.length) * 100;
-            document.getElementById('progress-bar').style.width = `${progress}%`;
-            document.getElementById('progress-container').classList.remove('hidden');
-
-            const prevBtn = document.getElementById('prev-lesson');
-            const nextBtn = document.getElementById('next-lesson');
-            
-            prevBtn.disabled = idx === 0;
-            prevBtn.onclick = () => loadLesson(currentLessons[idx - 1].id);
-            
-            if (idx === currentLessons.length - 1) {
-                nextBtn.textContent = 'Finish Course';
-                nextBtn.onclick = () => window.location.href = 'dashboard.html';
-            } else {
-                nextBtn.textContent = 'Next Lesson';
-                nextBtn.onclick = () => loadLesson(currentLessons[idx + 1].id);
-            }
-
+            updateNavButtons(idx);
             renderCurriculum();
             document.getElementById('loading-overlay').classList.add('hidden');
             document.getElementById('player-view').classList.remove('hidden');
         }
 
-        document.getElementById('theme-toggle').onclick = () => {
-            document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        function updateNavButtons(idx) {
+            const prev = document.getElementById('prev-lesson');
+            const next = document.getElementById('next-lesson');
+            prev.disabled = idx === 0;
+            prev.onclick = () => loadLesson(currentLessons[idx - 1].id);
+            if (idx === currentLessons.length - 1) {
+                next.textContent = 'Finish';
+                next.onclick = () => window.location.href = 'dashboard.html';
+            } else {
+                next.textContent = 'Next Lesson';
+                next.onclick = () => loadLesson(currentLessons[idx + 1].id);
+            }
+        }
+
+        function renderCurriculum() {
+            const activeId = sessionStorage.getItem('current_lesson_id');
+            document.getElementById('sidebar-list').innerHTML = currentLessons.map((l, i) => `
+                <div onclick="loadLesson('${l.id}')" class="p-3 rounded-xl cursor-pointer ${l.id === activeId ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${l.title}</h4>
+                </div>
+            `).join('');
+        }
+
+        function startWatermarkMovement() {
+            const el = document.getElementById('video-watermark');
+            const pos = [{t:'5%',l:'5%'}, {t:'5%',l:'70%'}, {t:'80%',l:'5%'}, {t:'80%',l:'70%'}];
+            let i = 0;
+            setInterval(() => { i = (i+1)%pos.length; el.style.top = pos[i].t; el.style.left = pos[i].l; }, 5000);
+        }
+
+        // Control Listeners
+        document.getElementById('play-pause-btn').onclick = () => {
+            const state = player.getPlayerState();
+            state === 1 ? player.pauseVideo() : player.playVideo();
         };
 
-        window.addEventListener('DOMContentLoaded', init);
+        document.getElementById('shield').onclick = () => {
+             const state = player.getPlayerState();
+             state === 1 ? player.pauseVideo() : player.playVideo();
+        };
+
+        document.getElementById('volume-slider').oninput = (e) => {
+            player.setVolume(e.target.value);
+        };
+
+        document.getElementById('mute-btn').onclick = () => {
+            player.isMuted() ? player.unMute() : player.mute();
+        };
+
+        document.getElementById('speed-selector').onchange = (e) => {
+            player.setPlaybackRate(parseFloat(e.target.value));
+        };
+
+        document.getElementById('fs-btn').onclick = () => {
+            const container = document.getElementById('video-container-main');
+            if (!document.fullscreenElement) container.requestFullscreen();
+            else document.exitFullscreen();
+        };
+
+        document.getElementById('theme-toggle').onclick = () => {
+            document.documentElement.classList.toggle('dark');
+        };
     </script>
 </body>
 </html>
