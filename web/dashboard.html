@@ -26,10 +26,6 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <a id="admin-link" href="admindashboard.html" class="hidden px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black uppercase rounded-xl hover:scale-105 transition">
-                    Admin Panel
-                </a>
-                
                 <button id="theme-toggle" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
@@ -113,14 +109,8 @@
                 return;
             }
 
-            checkAdminStatus(user.id);
             loadOverview(user.id);
             loadCourses(user.id);
-        }
-
-        async function checkAdminStatus(userId) {
-            const { data } = await supabaseClient.from('profiles').select('role').eq('id', userId).single();
-            if (data?.role === 'admin') document.getElementById('admin-link').classList.remove('hidden');
         }
 
         async function loadOverview(userId) {
@@ -168,20 +158,21 @@
         async function loadCourses(userId) {
             const grid = document.getElementById('course-grid');
             
-            // 1. Get IDs of courses the user has progress in
-            const { data: progress } = await supabaseClient
-                .from('user_progress')
-                .select('lessons(course_id)')
-                .eq('user_id', userId);
+            // 1. Get IDs of courses from the enrollments table where status is approved
+            const { data: enrollments } = await supabaseClient
+                .from('enrollments')
+                .select('course_id')
+                .eq('user_id', userId)
+                .eq('status', 'approved');
 
-            if (!progress || progress.length === 0) {
+            if (!enrollments || enrollments.length === 0) {
                 grid.innerHTML = `
                     <div class="col-span-full py-20 flex flex-col items-center text-center">
                         <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
                             <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                         </div>
                         <h3 class="text-xl font-bold mb-2">No Enrolled Courses</h3>
-                        <p class="text-slate-500 dark:text-slate-400 mb-8 max-w-sm">You haven't started any courses yet. Explore our library to find your next skill.</p>
+                        <p class="text-slate-500 dark:text-slate-400 mb-8 max-w-sm">You haven't been enrolled in any courses yet. Explore our library to find your next skill.</p>
                         <a href="course.html" class="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-600/20 hover:scale-105 transition active:scale-95">
                             Browse All Courses
                         </a>
@@ -190,14 +181,9 @@
             }
 
             // Extract unique course IDs
-            const enrolledCourseIds = [...new Set(progress.map(p => p.lessons?.course_id).filter(id => id))];
+            const enrolledCourseIds = [...new Set(enrollments.map(e => e.course_id))];
 
-            if (enrolledCourseIds.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">No active enrollments found.</div>`;
-                return;
-            }
-
-            // 2. Fetch only those courses
+            // 2. Fetch the actual course details
             const { data: courses } = await supabaseClient
                 .from('courses')
                 .select('*')
@@ -222,7 +208,7 @@
                     </div>
                 `).join('');
             } else {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">No enrolled courses found.</div>`;
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">No approved enrollments found.</div>`;
             }
         }
 
