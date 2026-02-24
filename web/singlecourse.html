@@ -55,10 +55,9 @@
     </header>
 
     <main id="app-container" class="max-w-7xl mx-auto px-4 py-8">
-        <!-- Breadcrumbs -->
         <nav class="flex mb-8 text-sm text-slate-500" aria-label="Breadcrumb">
             <ol class="flex items-center space-x-2">
-                <li><a href="course.html" class="hover:text-emerald-600">Courses</a></li>
+                <li><a href="course.html" class="hover:text-emerald-600 transition">Courses</a></li>
                 <li class="flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
                     <span id="breadcrumb-current" class="dark:text-slate-300 font-medium">Loading...</span>
@@ -68,47 +67,45 @@
 
         <div id="loading-state" class="py-20 text-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-            <p class="mt-4 text-slate-500">Fetching course curriculum...</p>
+            <p class="mt-4 text-slate-500">Verifying access...</p>
         </div>
 
         <div id="course-content" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column: Course Details -->
             <div class="lg:col-span-2 space-y-8">
                 <div class="relative rounded-3xl overflow-hidden shadow-2xl shadow-emerald-600/10 border border-slate-200 dark:border-slate-800">
                     <img id="course-banner" src="" alt="Course Image" class="w-full h-80 object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end p-8">
                         <div>
                             <span id="course-category" class="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full mb-3 inline-block"></span>
-                            <h1 id="course-title" class="text-3xl md:text-4xl font-extrabold text-white"></h1>
+                            <h1 id="course-title" class="text-3xl md:text-4xl font-extrabold text-white leading-tight"></h1>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">About this course</h2>
                     <p id="course-desc" class="text-slate-600 dark:text-slate-400 leading-relaxed"></p>
                 </div>
             </div>
 
-            <!-- Right Column: Lesson List -->
             <div class="space-y-6">
-                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 sticky top-24">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 sticky top-24 shadow-sm">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-lg font-bold text-slate-900 dark:text-white">Curriculum</h2>
                         <span id="lesson-count" class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-500">0 Lessons</span>
                     </div>
 
-                    <div id="lesson-list" class="space-y-3">
-                        <!-- Lessons will be injected here -->
+                    <div id="lesson-list" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- Restricted content will be handled by JS -->
                     </div>
 
-                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+                    <div id="enrollment-footer" class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
                         <div class="flex items-center justify-between mb-4">
                             <span class="text-slate-500 text-sm">Course Price</span>
                             <span id="course-price" class="text-2xl font-bold text-emerald-600"></span>
                         </div>
-                        <button class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-emerald-600/30">
-                            Enroll in Full Program
+                        <button id="enroll-btn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-emerald-600/30 active:scale-[0.98]">
+                            Enroll Now
                         </button>
                     </div>
                 </div>
@@ -117,9 +114,9 @@
 
         <div id="error-state" class="hidden text-center py-20">
             <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-8 rounded-3xl inline-block max-w-md">
-                <p class="text-xl font-bold mb-2">Course Not Found</p>
-                <p class="text-sm opacity-80">The course you are looking for might have been moved or deleted.</p>
-                <a href="course.html" class="mt-6 inline-block px-6 py-2 bg-red-600 text-white rounded-xl font-bold">Go Back to Courses</a>
+                <p class="text-xl font-bold mb-2">Access Restricted</p>
+                <p id="error-message" class="text-sm opacity-80">Please sign in to view course details.</p>
+                <a href="login.html" class="mt-6 inline-block px-6 py-2 bg-red-600 text-white rounded-xl font-bold">Sign In</a>
             </div>
         </div>
     </main>
@@ -132,33 +129,34 @@
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
-        // Theme Toggle Logic
-        const themeBtn = document.getElementById('theme-toggle');
-        const sun = document.getElementById('sun-icon');
-        const moon = document.getElementById('moon-icon');
-        const updateIcons = () => {
-            const isDark = document.documentElement.classList.contains('dark');
-            sun.classList.toggle('hidden', !isDark);
-            moon.classList.toggle('hidden', isDark);
-        };
-        themeBtn.onclick = () => {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            updateIcons();
-        };
-        updateIcons();
-
         async function init() {
             const params = new URLSearchParams(window.location.search);
             const courseId = params.get('id');
-
+            
             if (!courseId) {
-                showError();
+                showError("No course selected.");
                 return;
             }
 
             try {
-                // 1. Fetch Course Data
+                // Check Authentication
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) {
+                    showError("Please sign in to view this course.");
+                    return;
+                }
+
+                // Check Enrollment
+                const { data: enrollment } = await supabaseClient
+                    .from('enrollments')
+                    .select('id')
+                    .eq('course_id', courseId)
+                    .eq('user_id', user.id)
+                    .single();
+
+                const isEnrolled = !!enrollment;
+
+                // Fetch Course Info
                 const { data: course, error: courseError } = await supabaseClient
                     .from('courses')
                     .select('*')
@@ -167,63 +165,106 @@
 
                 if (courseError || !course) throw new Error('Course not found');
 
-                // 2. Fetch Lessons for this course
-                const { data: lessons, error: lessonError } = await supabaseClient
+                // Fetch Lessons
+                const { data: lessons } = await supabaseClient
                     .from('lessons')
                     .select('*')
                     .eq('course_id', courseId)
                     .order('created_at', { ascending: true });
 
-                renderPage(course, lessons || []);
+                renderPage(course, lessons || [], isEnrolled, user.id);
 
             } catch (err) {
                 console.error(err);
-                showError();
+                showError("Something went wrong while loading the course.");
             }
         }
 
-        function renderPage(course, lessons) {
+        function renderPage(course, lessons, isEnrolled, userId) {
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('course-content').classList.remove('hidden');
 
-            // Set Meta/Breadcrumbs
             document.title = `${course.title} | EduStream`;
             document.getElementById('breadcrumb-current').textContent = course.title;
-
-            // Set Header Content
             document.getElementById('course-title').textContent = course.title;
             document.getElementById('course-category').textContent = course.category || 'Professional';
-            document.getElementById('course-banner').src = course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&q=80';
-            document.getElementById('course-desc').textContent = course.description || 'No description available.';
+            document.getElementById('course-banner').src = course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200';
+            document.getElementById('course-desc').textContent = course.description;
             document.getElementById('course-price').textContent = course.price > 0 ? `$${course.price}` : 'Free';
             document.getElementById('lesson-count').textContent = `${lessons.length} Lessons`;
 
-            // Render Lessons
             const lessonListEl = document.getElementById('lesson-list');
-            if (lessons.length === 0) {
-                lessonListEl.innerHTML = `<p class="text-sm text-slate-500 italic p-4 text-center">No lessons added to this curriculum yet.</p>`;
+            const enrollBtn = document.getElementById('enroll-btn');
+
+            if (isEnrolled) {
+                enrollBtn.textContent = 'Enrolled (Start Learning)';
+                enrollBtn.classList.replace('bg-emerald-600', 'bg-slate-800');
+                enrollBtn.disabled = true;
+
+                lessonListEl.innerHTML = lessons.map((lesson, index) => {
+                    const type = (lesson.lesson_type || 'video').toLowerCase();
+                    const icon = getIcon(type);
+                    return `
+                        <div class="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all cursor-pointer">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                                ${icon}
+                            </div>
+                            <div class="flex-grow min-w-0">
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">${lesson.title}</h4>
+                                <span class="text-[10px] text-slate-500 font-medium">${lesson.duration || '5 mins'}</span>
+                            </div>
+                            <a href="player.html?id=${lesson.id}" class="px-3 py-1.5 bg-emerald-600 text-white text-[10px] uppercase font-black rounded-lg">Start</a>
+                        </div>
+                    `;
+                }).join('');
             } else {
-                lessonListEl.innerHTML = lessons.map((lesson, index) => `
-                    <div class="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all cursor-pointer">
-                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center font-bold text-sm">
-                            ${index + 1}
-                        </div>
-                        <div class="flex-grow">
-                            <h4 class="text-sm font-bold text-slate-900 dark:text-white">${lesson.title}</h4>
-                            <p class="text-xs text-slate-500">${lesson.duration || '5 mins'}</p>
-                        </div>
-                        <a href="player.html?course=${course.id}&lesson=${lesson.id}" 
-                           class="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-emerald-600 text-white text-[10px] uppercase tracking-wider font-black rounded-lg transition-all">
-                           Start
-                        </a>
+                // Locked State
+                lessonListEl.innerHTML = `
+                    <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                        <svg class="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Curriculum Locked</h4>
+                        <p class="text-xs text-slate-500 mb-4">Enroll in this course to unlock ${lessons.length} lessons and assignments.</p>
+                        <button onclick="handleEnroll('${course.id}', '${userId}')" class="text-emerald-600 text-xs font-bold hover:underline">Enroll to unlock</button>
                     </div>
-                `).join('');
+                `;
+
+                enrollBtn.onclick = () => handleEnroll(course.id, userId);
             }
         }
 
-        function showError() {
+        async function handleEnroll(courseId, userId) {
+            const btn = document.getElementById('enroll-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Enrolling...';
+            btn.disabled = true;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('enrollments')
+                    .insert([{ user_id: userId, course_id: courseId }]);
+
+                if (error) throw error;
+                window.location.reload();
+            } catch (err) {
+                console.error(err);
+                alert("Enrollment failed. Please try again.");
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function getIcon(type) {
+            if (type === 'video') return `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            if (type === 'pdf') return `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>`;
+            return `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+        }
+
+        function showError(msg) {
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('error-state').classList.remove('hidden');
+            document.getElementById('error-message').textContent = msg;
         }
 
         init();
