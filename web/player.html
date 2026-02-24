@@ -22,7 +22,6 @@
             border-radius: 0.5rem;
         }
         
-        /* Blocks standard YouTube context menu and interactions */
         .video-interaction-shield {
             position: absolute;
             top: 0;
@@ -82,7 +81,6 @@
             height: 4px;
         }
 
-        /* Progress Bar Styling */
         .progress-container {
             width: 100%;
             height: 6px;
@@ -122,6 +120,15 @@
         .progress-container:hover .progress-handle {
             display: block;
         }
+
+        /* Type badges */
+        .type-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
     </style>
     <script>
         tailwind.config = { 
@@ -154,18 +161,11 @@
         <main class="flex-1 overflow-y-auto custom-scrollbar">
             <div id="player-view" class="hidden">
                 <div id="video-container-main" class="video-wrapper">
-                    <!-- YouTube Iframe -->
                     <div id="yt-player" class="w-full h-full"></div>
-                    
-                    <!-- Interaction Shield -->
                     <div id="shield" class="video-interaction-shield"></div>
-                    
-                    <!-- Watermark -->
                     <div id="video-watermark">SECURE STREAM</div>
 
-                    <!-- Custom Control Bar -->
                     <div class="custom-controls">
-                        <!-- Progress Bar Container -->
                         <div id="progress-container" class="progress-container">
                             <div id="progress-fill" class="progress-fill">
                                 <div class="progress-handle"></div>
@@ -173,13 +173,11 @@
                         </div>
 
                         <div class="flex items-center gap-4 w-full">
-                            <!-- Play/Pause -->
                             <button id="play-pause-btn" class="control-btn">
                                 <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                             </button>
 
-                            <!-- Volume -->
                             <div class="flex items-center gap-2 group/vol">
                                 <button id="mute-btn" class="control-btn">
                                     <svg id="volume-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
@@ -187,12 +185,10 @@
                                 <input id="volume-slider" type="range" min="0" max="100" value="100" class="w-0 group-hover/vol:w-20 transition-all duration-300">
                             </div>
 
-                            <!-- Time Display -->
                             <div class="text-white text-xs font-medium font-mono select-none">
                                 <span id="current-time">0:00</span> / <span id="duration">0:00</span>
                             </div>
 
-                            <!-- Speed & FS -->
                             <div class="ml-auto flex items-center gap-4">
                                 <select id="speed-selector" class="bg-transparent text-white text-xs font-bold border border-white/20 rounded px-2 py-1 outline-none">
                                     <option value="0.5" class="bg-black">0.5x</option>
@@ -201,7 +197,6 @@
                                     <option value="2" class="bg-black">2x</option>
                                 </select>
 
-                                <!-- Fullscreen -->
                                 <button id="fs-btn" class="control-btn">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                                 </button>
@@ -217,7 +212,10 @@
                 <div class="max-w-5xl mx-auto px-6 py-10">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                         <div>
-                            <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest mb-2 block">Lesson</span>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest block">Lesson</span>
+                                <span id="lesson-type-badge" class="type-badge bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400">...</span>
+                            </div>
                             <h2 id="lesson-title" class="text-2xl font-black text-slate-900 dark:text-white leading-tight">...</h2>
                         </div>
                         <div class="flex items-center gap-3">
@@ -245,7 +243,7 @@
     <script>
         const CONFIG = {
             SUPABASE_URL: 'https://pkqpvnrtxtqlngwtfnhy.supabase.co',
-            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0'
+            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0xHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0'
         };
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -263,26 +261,23 @@
                 `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        // Extract YT ID
         function getYouTubeId(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url?.match(regExp);
             return (match && match[2].length === 11) ? match[2] : url;
         }
 
-        // YouTube API Ready
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('yt-player', {
                 height: '100%',
                 width: '100%',
                 playerVars: {
                     'autoplay': 1,
-                    'controls': 0, // Disable native controls
+                    'controls': 0,
                     'rel': 0,
                     'modestbranding': 1,
                     'iv_load_policy': 3,
-                    'disablekb': 1,
-                    'origin': window.location.origin
+                    'disablekb': 1
                 },
                 events: {
                     'onReady': () => { 
@@ -312,7 +307,7 @@
                 if (player && player.getCurrentTime) {
                     const current = player.getCurrentTime();
                     const total = player.getDuration();
-                    const pct = (current / total) * 100;
+                    const pct = total > 0 ? (current / total) * 100 : 0;
                     
                     document.getElementById('progress-fill').style.width = `${pct}%`;
                     document.getElementById('current-time').textContent = formatTime(current);
@@ -337,25 +332,40 @@
                 supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
             ]);
 
-            currentLessons = lRes.data;
-            document.getElementById('nav-course-title').textContent = cRes.data.title;
+            currentLessons = lRes.data || [];
+            document.getElementById('nav-course-title').textContent = cRes.data?.title || 'Course';
             renderCurriculum();
             loadLesson(lessonId);
         }
 
         function loadLesson(id) {
             const lesson = currentLessons.find(l => l.id === id);
-            if (!lesson || !player) return;
+            if (!lesson) return;
 
+            // HANDLE NON-VIDEO TYPES
+            if (lesson.lesson_type && lesson.lesson_type !== 'video') {
+                if (lesson.video_url) {
+                    window.open(lesson.video_url, '_blank');
+                }
+                // Don't change UI/state if it's just opening a tab
+                return;
+            }
+
+            // Load Video State
             sessionStorage.setItem('current_lesson_id', id);
             const idx = currentLessons.indexOf(lesson);
 
             document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
             document.getElementById('lesson-title').textContent = lesson.title;
             document.getElementById('lesson-desc').textContent = lesson.description || '';
+            
+            const badge = document.getElementById('lesson-type-badge');
+            badge.textContent = lesson.lesson_type || 'video';
 
             const ytId = getYouTubeId(lesson.video_url);
-            player.loadVideoById(ytId);
+            if (player && player.loadVideoById) {
+                player.loadVideoById(ytId);
+            }
 
             updateNavButtons(idx);
             renderCurriculum();
@@ -379,11 +389,25 @@
 
         function renderCurriculum() {
             const activeId = sessionStorage.getItem('current_lesson_id');
-            document.getElementById('sidebar-list').innerHTML = currentLessons.map((l, i) => `
-                <div onclick="loadLesson('${l.id}')" class="p-3 rounded-xl cursor-pointer ${l.id === activeId ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}">
-                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${l.title}</h4>
-                </div>
-            `).join('');
+            const container = document.getElementById('sidebar-list');
+            container.innerHTML = currentLessons.map((l, i) => {
+                const isVideo = !l.lesson_type || l.lesson_type === 'video';
+                return `
+                    <div onclick="loadLesson('${l.id}')" class="p-3 rounded-xl cursor-pointer transition-all ${l.id === activeId ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                        <div class="flex items-start gap-2">
+                            <div class="mt-1">
+                                ${isVideo ? 
+                                    '<svg class="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' : 
+                                    '<svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>'}
+                            </div>
+                            <div class="flex-1 overflow-hidden">
+                                <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${l.title}</h4>
+                                <span class="text-[9px] uppercase font-black opacity-40">${l.lesson_type || 'video'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function startWatermarkMovement() {
@@ -393,7 +417,15 @@
             setInterval(() => { i = (i+1)%pos.length; el.style.top = pos[i].t; el.style.left = pos[i].l; }, 5000);
         }
 
-        // Control Listeners
+        // Seek Event
+        document.getElementById('progress-container').onclick = function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const pct = x / rect.width;
+            const total = player.getDuration();
+            player.seekTo(total * pct, true);
+        };
+
         document.getElementById('play-pause-btn').onclick = () => {
             const state = player.getPlayerState();
             state === 1 ? player.pauseVideo() : player.playVideo();
@@ -402,15 +434,6 @@
         document.getElementById('shield').onclick = () => {
              const state = player.getPlayerState();
              state === 1 ? player.pauseVideo() : player.playVideo();
-        };
-
-        // Seek functionality
-        document.getElementById('progress-container').onclick = function(e) {
-            const rect = this.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const pct = x / rect.width;
-            const total = player.getDuration();
-            player.seekTo(total * pct, true);
         };
 
         document.getElementById('volume-slider').oninput = (e) => {
@@ -435,7 +458,6 @@
             const container = document.getElementById('video-container-main');
             if (!document.fullscreenElement) {
                 if (container.requestFullscreen) container.requestFullscreen();
-                else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
             } else {
                 if (document.exitFullscreen) document.exitFullscreen();
             }
