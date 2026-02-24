@@ -5,18 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playing Lesson | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- YouTube IFrame API -->
-    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <!-- Plyr Custom Player Assets -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
-        .video-container { aspect-ratio: 16 / 9; position: relative; overflow: hidden; }
         
-        /* Custom Player Overlay to hide YouTube elements */
-        #player-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .yt-shield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        :root {
+            --plyr-color-main: #10b981;
+            --plyr-video-background: #000;
+        }
+        .video-container { 
+            aspect-ratio: 16 / 9; 
+            position: relative; 
+            overflow: hidden; 
+            background: #000; 
+            border-radius: 0.5rem;
+        }
+        .plyr--full-ui { height: 100%; }
+        .plyr__video-embed { height: 100%; }
+        
+        /* Interaction Shield: Blocks right-clicks and direct YT interactions */
+        .video-interaction-shield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            background: transparent;
+        }
+
+        /* Watermark Styles */
+        #video-watermark {
+            position: absolute;
+            z-index: 20;
+            pointer-events: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            user-select: none;
+            padding: 10px;
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* Anti-tamper Overlay */
+        #security-lockout {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            color: white;
+            text-align: center;
+            padding-top: 20vh;
+        }
     </style>
     <script>
         tailwind.config = { 
@@ -30,22 +80,55 @@
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         }
+
+        // --- SECURITY / DEVELOPER OPTIONS DETECTION ---
+        (function() {
+            const detectDevTools = () => {
+                const threshold = 160;
+                const widthDiff = window.outerWidth - window.innerWidth > threshold;
+                const heightDiff = window.outerHeight - window.innerHeight > threshold;
+                
+                if (widthDiff || heightDiff) {
+                    triggerLockout();
+                }
+            };
+
+            const triggerLockout = () => {
+                console.warn("Security policy violation detected.");
+                window.location.replace("kakahanalana.html");
+            };
+
+            window.addEventListener('resize', detectDevTools);
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            
+            document.addEventListener('keydown', e => {
+                if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85)) {
+                    triggerLockout();
+                    e.preventDefault();
+                }
+            });
+        })();
     </script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 flex flex-col">
 
-    <!-- Header -->
+    <!-- Security Lockout Screen -->
+    <div id="security-lockout">
+        <h2 class="text-2xl font-bold">Unauthorized Access Detected</h2>
+        <p class="mt-4 text-slate-400">Developer tools are disabled for this secure stream.</p>
+    </div>
+
     <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16 flex items-center shrink-0 z-50">
         <div class="max-w-full w-full px-6 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <a href="dashboard.html" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition text-slate-500">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 </a>
-                <h1 id="nav-course-title" class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md uppercase tracking-wider">Loading Course...</h1>
+                <h1 id="nav-course-title" class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md uppercase tracking-wider">Loading...</h1>
             </div>
             <div class="flex items-center gap-4">
                 <div id="progress-container" class="hidden md:flex flex-col items-end mr-4">
-                    <span class="text-[10px] text-slate-500 font-bold uppercase">Your Progress</span>
+                    <span class="text-[10px] text-slate-500 font-bold uppercase">Course Progress</span>
                     <div class="w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mt-1">
                         <div id="progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
                     </div>
@@ -58,19 +141,19 @@
     </header>
 
     <div class="flex flex-1 overflow-hidden">
-        <!-- Main Player -->
         <main class="flex-1 overflow-y-auto custom-scrollbar">
             <div id="player-view" class="hidden">
-                <div id="media-slot" class="bg-black w-full video-container flex items-center justify-center relative group">
-                    <!-- Custom Video Player Container -->
-                    <div id="player-wrapper">
-                        <div id="custom-yt-player"></div>
+                <div class="bg-black w-full video-container relative group">
+                    <div id="player-wrapper" class="h-full w-full">
+                        <div id="player" data-plyr-provider="youtube" data-plyr-embed-id=""></div>
                     </div>
                     
-                    <!-- Shield to prevent context menu and branding clicks -->
-                    <div class="yt-shield"></div>
+                    <!-- Interaction Shield -->
+                    <div class="video-interaction-shield"></div>
                     
-                    <!-- Loading Overlay -->
+                    <!-- Floating Watermark -->
+                    <div id="video-watermark">EDU-USER-SECURE</div>
+
                     <div id="video-loader" class="absolute inset-0 bg-black flex items-center justify-center z-10">
                         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
                     </div>
@@ -79,19 +162,19 @@
                 <div class="max-w-5xl mx-auto px-6 py-10">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                         <div>
-                            <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest mb-2 block">Lesson 0</span>
-                            <h2 id="lesson-title" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white leading-tight">Loading Lesson Title...</h2>
+                            <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest mb-2 block">Lesson</span>
+                            <h2 id="lesson-title" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white leading-tight">...</h2>
                         </div>
                         <div class="flex items-center gap-3">
-                            <button id="prev-lesson" class="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">Previous</button>
-                            <button id="next-lesson" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/30 disabled:opacity-30">Next Lesson</button>
+                            <button id="prev-lesson" class="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm disabled:opacity-30">Previous</button>
+                            <button id="next-lesson" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/30">Next Lesson</button>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 border-t border-slate-200 dark:border-slate-800 pt-8">
                         <div class="md:col-span-2">
                             <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Description</h3>
-                            <p id="lesson-desc" class="text-slate-600 dark:text-slate-400 leading-relaxed">No description available for this lesson.</p>
+                            <p id="lesson-desc" class="text-slate-600 dark:text-slate-400 leading-relaxed"></p>
                         </div>
                         <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
                             <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Resources</h3>
@@ -105,18 +188,15 @@
 
             <div id="loading-overlay" class="h-full w-full flex flex-col items-center justify-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-                <p class="text-slate-500 font-medium">Verifying authorization...</p>
+                <p class="text-slate-500 font-medium">Authorizing secure stream...</p>
             </div>
         </main>
 
-        <!-- Sidebar Curriculum -->
         <aside class="hidden lg:flex w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex-col shrink-0">
             <div class="p-6 border-b border-slate-200 dark:border-slate-800">
-                <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Course Curriculum</h3>
+                <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Curriculum</h3>
             </div>
-            <div id="sidebar-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-                <!-- Curriculum lessons -->
-            </div>
+            <div id="sidebar-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2"></div>
         </aside>
     </div>
 
@@ -129,11 +209,8 @@
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         let currentLessons = [];
         let currentCourse = null;
-        let ytPlayer = null;
-
-        // Simple obfuscation tools
-        const protect = (str) => btoa(str);
-        const unprotect = (str) => atob(str);
+        let playerInstance = null;
+        let currentUser = null;
 
         async function init() {
             const courseId = sessionStorage.getItem('current_course_id');
@@ -145,8 +222,14 @@
             }
 
             try {
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) throw new Error('Not authenticated');
+                const { data: { user }, error: authErr } = await supabaseClient.auth.getUser();
+                if (!user || authErr) throw new Error('Not authenticated');
+                currentUser = user;
+
+                // Update Watermark with User ID
+                const watermark = document.getElementById('video-watermark');
+                watermark.textContent = `EduStream | ID: ${user.id.substring(0, 8)}... | ${user.email}`;
+                startWatermarkMovement();
 
                 const { data: enrollment, error: enrollErr } = await supabaseClient
                     .from('enrollments')
@@ -169,21 +252,67 @@
                 currentCourse = courseRes.data;
                 currentLessons = lessonsRes.data;
 
+                // PLYR INITIALIZATION
+                playerInstance = new Plyr('#player', {
+                    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
+                    settings: ['quality', 'speed'],
+                    youtube: { 
+                        noCookie: true, 
+                        rel: 0, 
+                        showinfo: 0, 
+                        iv_load_policy: 3, 
+                        modestbranding: 1,
+                        fs: 0 // Disable full screen via YT button to force Plyr fullscreen
+                    }
+                });
+
+                playerInstance.on('ready', () => {
+                    document.getElementById('video-loader').classList.add('hidden');
+                });
+
+                playerInstance.on('ended', () => {
+                    const activeId = sessionStorage.getItem('current_lesson_id');
+                    const idx = currentLessons.findIndex(l => l.id === activeId);
+                    if (idx < currentLessons.length - 1) {
+                        loadLesson(currentLessons[idx + 1].id);
+                    }
+                });
+
                 renderCurriculum();
                 loadLesson(lessonId);
 
             } catch (err) {
-                console.error(err);
-                alert("Critical error loading the player.");
+                console.error("Init Error:", err);
+                alert("Authorization failed.");
             }
+        }
+
+        // Logic to move watermark periodically to prevent fixed-mask removal
+        function startWatermarkMovement() {
+            const watermark = document.getElementById('video-watermark');
+            const positions = [
+                { top: '10%', left: '10%' },
+                { top: '10%', left: '70%' },
+                { top: '80%', left: '10%' },
+                { top: '80%', left: '70%' },
+                { top: '45%', left: '40%' }
+            ];
+            let currentIdx = 0;
+            
+            setInterval(() => {
+                currentIdx = (currentIdx + 1) % positions.length;
+                watermark.style.top = positions[currentIdx].top;
+                watermark.style.left = positions[currentIdx].left;
+            }, 10000); // Move every 10 seconds
         }
 
         function renderCurriculum() {
             document.getElementById('nav-course-title').textContent = currentCourse.title;
             const sidebar = document.getElementById('sidebar-list');
+            const activeId = sessionStorage.getItem('current_lesson_id');
             
             sidebar.innerHTML = currentLessons.map((lesson, idx) => {
-                const isActive = lesson.id === sessionStorage.getItem('current_lesson_id');
+                const isActive = lesson.id === activeId;
                 return `
                     <div onclick="loadLesson('${lesson.id}')" class="group flex items-start gap-3 p-3 rounded-xl transition-all cursor-pointer ${isActive ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent'}">
                         <div class="shrink-0 w-6 h-6 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'} flex items-center justify-center text-[10px] font-bold">
@@ -199,12 +328,12 @@
         }
 
         async function loadLesson(lessonId) {
-            document.getElementById('player-view').classList.add('hidden');
-            document.getElementById('loading-overlay').classList.remove('hidden');
-            
             const lesson = currentLessons.find(l => l.id === lessonId);
             if (!lesson) return;
 
+            document.getElementById('player-view').classList.add('hidden');
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            
             sessionStorage.setItem('current_lesson_id', lessonId);
             const idx = currentLessons.indexOf(lesson);
 
@@ -215,46 +344,16 @@
             const loader = document.getElementById('video-loader');
             loader.classList.remove('hidden');
 
-            // Handling custom YouTube Player initialization
-            const rawId = lesson.video_url; // Expecting just the ID here now
-            const secureId = protect(rawId); 
-
-            // Initialize or update YouTube Player
-            if (ytPlayer) {
-                ytPlayer.loadVideoById(unprotect(secureId));
-            } else {
-                // Wait for API if not ready
-                if (typeof YT !== 'undefined' && YT.Player) {
-                    ytPlayer = new YT.Player('custom-yt-player', {
-                        height: '100%',
-                        width: '100%',
-                        videoId: unprotect(secureId),
-                        playerVars: {
-                            'autoplay': 0,
-                            'controls': 1,
-                            'modestbranding': 1,
-                            'rel': 0,
-                            'showinfo': 0,
-                            'fs': 1,
-                            'disablekb': 1,
-                            'iv_load_policy': 3
-                        },
-                        events: {
-                            'onReady': (event) => loader.classList.add('hidden'),
-                            'onStateChange': (event) => {
-                                // You can track progress here
-                            }
-                        }
-                    });
-                } else {
-                    // Fallback if API hasn't loaded yet
-                    window.onYouTubeIframeAPIReady = () => loadLesson(lessonId);
-                    return;
-                }
+            if (playerInstance) {
+                playerInstance.source = {
+                    type: 'video',
+                    sources: [{ src: lesson.video_url, provider: 'youtube' }],
+                };
             }
 
             const progress = ((idx + 1) / currentLessons.length) * 100;
             document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-container').classList.remove('hidden');
 
             const prevBtn = document.getElementById('prev-lesson');
             const nextBtn = document.getElementById('next-lesson');
@@ -264,10 +363,7 @@
             
             if (idx === currentLessons.length - 1) {
                 nextBtn.textContent = 'Finish Course';
-                nextBtn.onclick = () => {
-                    alert("Congratulations! You've reached the end.");
-                    window.location.href = 'dashboard.html';
-                };
+                nextBtn.onclick = () => window.location.href = 'dashboard.html';
             } else {
                 nextBtn.textContent = 'Next Lesson';
                 nextBtn.onclick = () => loadLesson(currentLessons[idx + 1].id);
@@ -283,8 +379,7 @@
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         };
 
-        // Initialize
-        init();
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
