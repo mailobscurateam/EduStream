@@ -68,7 +68,7 @@
             </button>
             <button onclick="switchTab('students')" id="nav-students" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-sm text-left">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                <span class="nav-text">Student Management</span>
+                <span class="nav-text">User Management</span>
             </button>
             <div class="h-px bg-slate-100 dark:bg-slate-800 my-4"></div>
             <a href="dashboard.html" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-400 hover:text-emerald-500 transition-all font-bold text-sm">
@@ -113,7 +113,7 @@
                     <h3 id="stat-pending" class="text-3xl font-black text-amber-500">0</h3>
                 </div>
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Students</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Users</p>
                     <h3 id="stat-users" class="text-3xl font-black">0</h3>
                 </div>
             </div>
@@ -183,11 +183,11 @@
                 <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                     <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg font-black uppercase tracking-tight">Student Directory</h3>
-                            <p class="text-xs text-slate-400 font-bold mt-1">List of all registered students in the system</p>
+                            <h3 class="text-lg font-black uppercase tracking-tight">User Directory</h3>
+                            <p class="text-xs text-slate-400 font-bold mt-1">List of all registered accounts in the system</p>
                         </div>
                         <button onclick="loadStudents()" class="p-2 text-slate-400 hover:text-emerald-500 bg-slate-50 dark:bg-slate-800 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"/></svg>
                         </button>
                     </div>
                     <div class="overflow-x-auto">
@@ -325,7 +325,7 @@
             const titles = {
                 'content': 'Content Manager',
                 'approvals': 'Enrollment Approvals',
-                'students': 'Student Management'
+                'students': 'User Management'
             };
             document.getElementById('page-title').textContent = titles[tab];
         }
@@ -340,8 +340,8 @@
         async function loadStats() {
             const { count: cCount } = await supabaseClient.from('courses').select('*', { count: 'exact', head: true });
             const { count: lCount } = await supabaseClient.from('lessons').select('*', { count: 'exact', head: true });
-            // Using updated_at since created_at doesn't exist in profiles
-            const { count: uCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
+            // Show all user count without filtering by student role
+            const { count: uCount } = await supabaseClient.from('profiles').select('*', { count: 'exact', head: true });
             const { data: eData } = await supabaseClient.from('enrollments').select('status');
 
             const pendingCount = eData ? eData.filter(e => e.status === 'pending').length : 0;
@@ -426,16 +426,15 @@
         }
 
         async function loadStudents() {
-            // Updated to filter by role = student and use updated_at instead of created_at
+            // Removed role = student filter to show all user profiles
             const { data: students, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
-                .eq('role', 'student')
                 .order('updated_at', { ascending: false });
 
             const tbody = document.getElementById('students-tbody');
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">Error loading students: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">Error loading users: ${error.message}</td></tr>`;
                 return;
             }
 
@@ -463,7 +462,7 @@
                         <button onclick="alert('Management features for individual accounts coming soon.')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 rounded-lg transition text-[10px] font-black uppercase">Manage</button>
                     </td>
                 </tr>
-            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No students found in directory.</td></tr>`;
+            `).join('') || `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">No users found in directory.</td></tr>`;
             loadStats();
         }
 
