@@ -99,7 +99,7 @@
                     </div>
 
                     <div id="lesson-list" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- Restricted content will be handled by JS -->
+                        <!-- Content handled by JS -->
                     </div>
 
                     <div id="enrollment-footer" class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
@@ -148,8 +148,17 @@
         }
 
         async function init() {
+            // Get ID from URL then clear it for privacy
             const params = new URLSearchParams(window.location.search);
-            const courseId = params.get('id');
+            let courseId = params.get('id');
+            
+            if (courseId) {
+                sessionStorage.setItem('current_course_id', courseId);
+                // Clean URL without refreshing
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                courseId = sessionStorage.getItem('current_course_id');
+            }
             
             if (!courseId) {
                 showError("No course selected.");
@@ -157,24 +166,22 @@
             }
 
             try {
-                // Check Authentication
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 if (!user) {
                     showError("Please sign in to view this course.");
                     return;
                 }
 
-                // Check Enrollment
+                // Check Enrollment & Status
                 const { data: enrollment } = await supabaseClient
                     .from('enrollments')
-                    .select('id')
+                    .select('status')
                     .eq('course_id', courseId)
                     .eq('user_id', user.id)
-                    .maybeSingle(); // Better for checking existence without throwing 406
+                    .maybeSingle();
 
-                const isEnrolled = !!enrollment;
+                const enrollmentStatus = enrollment ? enrollment.status : null; // null, 'pending', 'approved'
 
-                // Fetch Course Info
                 const { data: course, error: courseError } = await supabaseClient
                     .from('courses')
                     .select('*')
@@ -183,14 +190,13 @@
 
                 if (courseError || !course) throw new Error('Course not found');
 
-                // Fetch Lessons
                 const { data: lessons } = await supabaseClient
                     .from('lessons')
                     .select('*')
                     .eq('course_id', courseId)
                     .order('created_at', { ascending: true });
 
-                renderPage(course, lessons || [], isEnrolled, user.id);
+                renderPage(course, lessons || [], enrollmentStatus, user.id);
 
             } catch (err) {
                 console.error(err);
@@ -198,11 +204,10 @@
             }
         }
 
-        function renderPage(course, lessons, isEnrolled, userId) {
+        function renderPage(course, lessons, status, userId) {
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('course-content').classList.remove('hidden');
 
-            document.title = `${course.title} | EduStream`;
             document.getElementById('breadcrumb-current').textContent = course.title;
             document.getElementById('course-title').textContent = course.title;
             document.getElementById('course-category').textContent = course.category || 'Professional';
@@ -214,81 +219,92 @@
             const lessonListEl = document.getElementById('lesson-list');
             const enrollBtn = document.getElementById('enroll-btn');
 
-            if (isEnrolled) {
-                enrollBtn.textContent = 'Enrolled (Start Learning)';
-                enrollBtn.className = 'w-full py-4 bg-slate-800 text-white rounded-2xl font-bold transition-all opacity-70 cursor-default';
-                enrollBtn.disabled = true;
+            if (status === 'approved') {
+                // Fully Enrolled
+                enrollBtn.textContent = 'Start Learning';
+                enrollBtn.className = 'w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-emerald-600/30 active:scale-[0.98]';
+                enrollBtn.onclick = () => {
+                    if (lessons.length > 0) {
+                        sessionStorage.setItem('current_lesson_id', lessons[0].id);
+                        window.location.href = 'player.html';
+                    } else {
+                        showMessage("No lessons available yet.");
+                    }
+                };
 
-                lessonListEl.innerHTML = lessons.map((lesson, index) => {
+                lessonListEl.innerHTML = lessons.map((lesson) => {
                     const type = (lesson.lesson_type || 'video').toLowerCase();
-                    const icon = getIcon(type);
                     return `
-                        <div class="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all cursor-pointer">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center font-bold text-sm">
-                                ${icon}
+                        <div onclick="navigateToLesson('${lesson.id}')" class="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all cursor-pointer">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center">
+                                ${getIcon(type)}
                             </div>
                             <div class="flex-grow min-w-0">
                                 <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">${lesson.title}</h4>
                                 <span class="text-[10px] text-slate-500 font-medium">${lesson.duration || '5 mins'}</span>
                             </div>
-                            <a href="player.html?id=${lesson.id}" class="px-3 py-1.5 bg-emerald-600 text-white text-[10px] uppercase font-black rounded-lg">Start</a>
+                            <span class="text-emerald-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></span>
                         </div>
                     `;
                 }).join('');
+            } else if (status === 'pending') {
+                // Pending Approval
+                enrollBtn.textContent = 'Approval Pending...';
+                enrollBtn.className = 'w-full py-4 bg-amber-500 text-white rounded-2xl font-bold opacity-80 cursor-not-allowed';
+                enrollBtn.disabled = true;
+
+                lessonListEl.innerHTML = `
+                    <div class="text-center py-8 px-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border-2 border-dashed border-amber-200 dark:border-amber-800/50">
+                        <svg class="w-12 h-12 text-amber-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <h4 class="text-sm font-bold text-amber-900 dark:text-amber-400 mb-1">Waiting for Admin</h4>
+                        <p class="text-xs text-amber-700/70 dark:text-amber-400/60">Your enrollment request has been sent. Access will be granted once an administrator approves your request.</p>
+                    </div>
+                `;
             } else {
-                // Locked State
+                // Not Enrolled
+                enrollBtn.onclick = () => handleEnroll(course.id, userId);
                 lessonListEl.innerHTML = `
                     <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
                         <svg class="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>
                         <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Curriculum Locked</h4>
-                        <p class="text-xs text-slate-500 mb-4">Enroll in this course to unlock ${lessons.length} lessons and assignments.</p>
-                        <button onclick="handleEnroll('${course.id}', '${userId}')" class="text-emerald-600 text-xs font-bold hover:underline">Enroll to unlock</button>
+                        <p class="text-xs text-slate-500 mb-4">Enroll in this course to request access to ${lessons.length} lessons.</p>
+                        <button onclick="handleEnroll('${course.id}', '${userId}')" class="text-emerald-600 text-xs font-bold hover:underline">Enroll to request access</button>
                     </div>
                 `;
-
-                enrollBtn.onclick = () => handleEnroll(course.id, userId);
             }
         }
 
         async function handleEnroll(courseId, userId) {
             const btn = document.getElementById('enroll-btn');
-            const originalText = btn.textContent;
-            btn.textContent = 'Enrolling...';
+            btn.textContent = 'Sending Request...';
             btn.disabled = true;
 
             try {
-                // Double check session to ensure we have a valid token
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) {
-                    showMessage("Your session expired. Please log in again.");
-                    window.location.href = 'login.html';
-                    return;
-                }
-
                 const { error } = await supabaseClient
                     .from('enrollments')
                     .insert([{ 
-                        user_id: session.user.id, 
-                        course_id: courseId 
+                        user_id: userId, 
+                        course_id: courseId,
+                        status: 'pending' // Admin must approve
                     }]);
 
-                if (error) {
-                    if (error.code === '42501') {
-                        throw new Error("Permission Denied: Ensure you have run the RLS policies in the Supabase SQL editor.");
-                    }
-                    throw error;
-                }
+                if (error) throw error;
                 
-                showMessage("Enrolled successfully!", "success");
-                setTimeout(() => window.location.reload(), 1000);
+                showMessage("Request sent! Waiting for admin approval.", "success");
+                setTimeout(() => window.location.reload(), 1500);
             } catch (err) {
-                console.error('Enrollment Error Details:', err);
-                showMessage(err.message || "Enrollment failed. Check console for details.");
-                btn.textContent = originalText;
+                console.error(err);
+                showMessage(err.message || "Enrollment failed.");
+                btn.textContent = 'Enroll Now';
                 btn.disabled = false;
             }
+        }
+
+        function navigateToLesson(lessonId) {
+            sessionStorage.setItem('current_lesson_id', lessonId);
+            window.location.href = 'player.html';
         }
 
         function getIcon(type) {
@@ -302,6 +318,12 @@
             document.getElementById('error-state').classList.remove('hidden');
             document.getElementById('error-message').textContent = msg;
         }
+
+        // Handle Theme Toggle
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
 
         init();
     </script>
