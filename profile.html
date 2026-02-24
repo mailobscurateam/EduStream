@@ -22,7 +22,6 @@
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
 
-        /* Cover Image Styling with EduStream Text */
         .cover-image-container {
             position: relative;
             height: 160px;
@@ -50,9 +49,8 @@
             background: linear-gradient(to bottom, transparent 0%, rgba(15, 23, 42, 0.4) 100%);
         }
 
-        /* Beautiful Branded Background Pattern */
         .edustream-bg {
-            background-color: #0f172a; /* Slate 950 */
+            background-color: #0f172a;
             background-image: 
                 radial-gradient(circle at 2px 2px, rgba(16, 185, 129, 0.05) 1px, transparent 0),
                 linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95));
@@ -61,7 +59,6 @@
             overflow-x: hidden;
         }
 
-        /* Animated EduStream Text Overlay */
         .edustream-bg::before {
             content: "EDUSTREAM EDUSTREAM EDUSTREAM EDUSTREAM EDUSTREAM EDUSTREAM EDUSTREAM EDUSTREAM EDUSTREAM EDUSTREAM";
             position: fixed;
@@ -79,24 +76,14 @@
             user-select: none;
         }
 
-        .dark .edustream-bg::before {
-            color: rgba(16, 185, 129, 0.04);
-        }
-
-        /* Glassmorphism adjustment for Light Mode */
-        html:not(.dark) .edustream-bg {
-            background-color: #f8fafc;
-            background-image: 
-                radial-gradient(circle at 2px 2px, rgba(16, 185, 129, 0.1) 1px, transparent 0);
-        }
-        
-        html:not(.dark) .edustream-bg::before {
-            color: rgba(16, 185, 129, 0.04);
-        }
-
         .content-layer {
             position: relative;
             z-index: 10;
+        }
+
+        input:disabled, select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -122,7 +109,6 @@
 
             <!-- Profile Header -->
             <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-800/50 overflow-hidden mb-8 transition-transform hover:scale-[1.01]">
-                <!-- Branded Cover Image -->
                 <div class="cover-image-container profile-gradient">
                     <div class="cover-text">EduStream</div>
                     <div class="cover-overlay"></div>
@@ -137,6 +123,10 @@
                 <div class="pt-16 pb-8 px-8">
                     <h1 id="display-name" class="text-2xl font-bold text-slate-900 dark:text-white">Loading...</h1>
                     <p id="display-email" class="text-slate-500 dark:text-slate-400">Please wait while we fetch your details</p>
+                    <div id="lock-badge" class="hidden mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" /></svg>
+                        Profile Locked
+                    </div>
                 </div>
             </div>
 
@@ -146,30 +136,71 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 11-2 0V3a1 1 0 00-1-1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2h-3zM1 9a1 1 0 011-1h16a1 1 0 110 2H2a1 1 0 01-1-1z" clip-rule="evenodd" />
                     </svg>
-                    Personal Information
+                    Student Information
                 </h2>
                 
                 <form id="profile-form" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
-                            <input type="text" id="full_name" class="w-full px-4 py-2 border dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                            <input type="text" id="full_name" required class="w-full px-4 py-2 border dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number (Read-only)</label>
-                            <input type="tel" id="phone" disabled class="w-full px-4 py-2 border dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-500 rounded-lg cursor-not-allowed">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+                            <input type="tel" id="phone" required class="w-full px-4 py-2 border dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">District</label>
+                            <select id="district" required class="w-full px-4 py-2 border dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                                <option value="" disabled selected>Select District</option>
+                                <option value="Ampara">Ampara</option>
+                                <option value="Anuradhapura">Anuradhapura</option>
+                                <option value="Badulla">Badulla</option>
+                                <option value="Batticaloa">Batticaloa</option>
+                                <option value="Colombo">Colombo</option>
+                                <option value="Galle">Galle</option>
+                                <option value="Gampaha">Gampaha</option>
+                                <option value="Hambantota">Hambantota</option>
+                                <option value="Jaffna">Jaffna</option>
+                                <option value="Kalutara">Kalutara</option>
+                                <option value="Kandy">Kandy</option>
+                                <option value="Kegalle">Kegalle</option>
+                                <option value="Kilinochchi">Kilinochchi</option>
+                                <option value="Kurunegala">Kurunegala</option>
+                                <option value="Mannar">Mannar</option>
+                                <option value="Matale">Matale</option>
+                                <option value="Matara">Matara</option>
+                                <option value="Moneragala">Moneragala</option>
+                                <option value="Mullaitivu">Mullaitivu</option>
+                                <option value="Nuwara Eliya">Nuwara Eliya</option>
+                                <option value="Polonnaruwa">Polonnaruwa</option>
+                                <option value="Puttalam">Puttalam</option>
+                                <option value="Ratnapura">Ratnapura</option>
+                                <option value="Trincomalee">Trincomalee</option>
+                                <option value="Vavuniya">Vavuniya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email (Read-only)</label>
+                            <input type="email" id="email" disabled class="w-full px-4 py-2 border dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-500 rounded-lg cursor-not-allowed">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address (Read-only)</label>
-                        <input type="email" id="email" disabled class="w-full px-4 py-2 border dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-500 rounded-lg cursor-not-allowed">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Address</label>
+                        <textarea id="address" required rows="3" class="w-full px-4 py-2 border dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition resize-none"></textarea>
                     </div>
 
-                    <div class="pt-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-800">
-                        <p class="text-xs text-slate-500">Last updated: <span id="last-login">N/A</span></p>
-                        <button type="submit" id="save-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/20">
-                            Save Changes
+                    <div class="pt-4 flex flex-col md:flex-row items-start md:items-center justify-between border-t border-slate-200 dark:border-slate-800 gap-4">
+                        <div class="space-y-1">
+                            <p class="text-xs text-slate-500">Last login: <span id="last-login">N/A</span></p>
+                            <p id="lock-notice" class="hidden text-xs text-amber-500 font-medium">Note: Information cannot be changed once submitted.</p>
+                        </div>
+                        <button type="submit" id="save-btn" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-2 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/20 disabled:bg-slate-400 disabled:shadow-none disabled:cursor-not-allowed">
+                            Submit & Lock
                         </button>
                     </div>
                 </form>
@@ -190,7 +221,8 @@
         };
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
-        // Load User Data
+        let currentUser = null;
+
         async function loadProfile() {
             try {
                 const { data: { user }, error } = await supabaseClient.auth.getUser();
@@ -199,49 +231,112 @@
                     window.location.assign('login.html');
                     return;
                 }
+                currentUser = user;
 
-                // Metadata safety fallback
+                // 1. Fetch from students table
+                const { data: studentRecord, error: studentError } = await supabaseClient
+                    .from('students')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                // 2. Map data (Priority: DB Record > Auth Metadata > Empty)
                 const metadata = user.user_metadata || {};
-                
-                document.getElementById('display-name').textContent = metadata.full_name || 'EduStream Student';
-                document.getElementById('display-email').textContent = user.email || '';
-                document.getElementById('full_name').value = metadata.full_name || '';
-                document.getElementById('phone').value = metadata.phone_number || '';
-                document.getElementById('email').value = user.email || '';
+                const name = studentRecord?.full_name || metadata.full_name || '';
+                const phone = studentRecord?.phone_number || metadata.phone_number || '';
+                const district = studentRecord?.district || metadata.district || '';
+                const address = studentRecord?.address || metadata.address || '';
+                const email = user.email || '';
+
+                // 3. UI Updates
+                document.getElementById('display-name').textContent = name || 'EduStream Student';
+                document.getElementById('display-email').textContent = email;
+                document.getElementById('full_name').value = name;
+                document.getElementById('phone').value = phone;
+                document.getElementById('district').value = district;
+                document.getElementById('address').value = address;
+                document.getElementById('email').value = email;
                 
                 const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'N/A';
                 document.getElementById('last-login').textContent = lastSignIn;
+
+                // 4. Handle Read-Only state
+                if (studentRecord) {
+                    lockForm();
+                }
             } catch (err) {
                 console.error('Error loading profile:', err);
-                window.location.assign('login.html');
+                showAlert('Failed to load profile data.');
             }
         }
 
-        // Update Profile
+        function lockForm() {
+            const form = document.getElementById('profile-form');
+            const inputs = form.querySelectorAll('input:not(#email), select, textarea');
+            const saveBtn = document.getElementById('save-btn');
+            const lockBadge = document.getElementById('lock-badge');
+            const lockNotice = document.getElementById('lock-notice');
+
+            inputs.forEach(input => input.disabled = true);
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Submitted';
+            lockBadge.classList.remove('hidden');
+            lockNotice.classList.remove('hidden');
+        }
+
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!currentUser) return;
+
             const saveBtn = document.getElementById('save-btn');
-            const fullName = document.getElementById('full_name').value;
-            // Phone is now read-only, so we don't need to capture updates for it here
+            const fullName = document.getElementById('full_name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const district = document.getElementById('district').value;
+            const address = document.getElementById('address').value.trim();
 
-            saveBtn.disabled = true;
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = 'Saving...';
-
-            // Only update full_name since phone and email are read-only
-            const { error } = await supabaseClient.auth.updateUser({
-                data: { full_name: fullName }
-            });
-
-            if (error) {
-                showAlert(error.message, 'error');
-            } else {
-                showAlert('Profile updated successfully!', 'success');
-                document.getElementById('display-name').textContent = fullName;
+            if (!fullName || !phone || !district || !address) {
+                showAlert('Please fill in all required fields.');
+                return;
             }
 
-            saveBtn.disabled = false;
-            saveBtn.textContent = originalText;
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Submitting...';
+
+            try {
+                // 1. Update Auth Metadata
+                const { error: authError } = await supabaseClient.auth.updateUser({
+                    data: { 
+                        full_name: fullName,
+                        phone_number: phone,
+                        district: district,
+                        address: address
+                    }
+                });
+                if (authError) throw authError;
+
+                // 2. Insert into students table
+                const { error: dbError } = await supabaseClient
+                    .from('students')
+                    .insert([{
+                        id: currentUser.id,
+                        full_name: fullName,
+                        phone_number: phone,
+                        district: district,
+                        address: address,
+                        email: currentUser.email
+                    }]);
+                if (dbError) throw dbError;
+
+                showAlert('Profile locked successfully!', 'success');
+                document.getElementById('display-name').textContent = fullName;
+                lockForm();
+
+            } catch (err) {
+                console.error('Submission error:', err);
+                showAlert(err.message || 'Failed to submit profile.');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Submit & Lock';
+            }
         });
 
         // Logout
@@ -274,10 +369,10 @@
             } else {
                 box.className = "mb-6 p-4 rounded-lg text-sm bg-red-500/10 text-red-400 border border-red-500/20";
             }
-            setTimeout(() => box.classList.add('hidden'), 4000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => box.classList.add('hidden'), 5000);
         }
 
-        // Execute initialization
         updateThemeUI();
         loadProfile();
     </script>
