@@ -51,7 +51,7 @@
         <nav class="flex-grow py-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
             <button onclick="switchView('approvals')" id="nav-approvals" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group active-nav">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span class="nav-label whitespace-nowrap">Approvals</span>
+                <span class="nav-label whitespace-nowrap">Enrollments</span>
             </button>
             <button onclick="switchView('courses')" id="nav-courses" class="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl font-medium transition-all group">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
@@ -84,7 +84,7 @@
             <div class="mb-10 flex justify-between items-end">
                 <div>
                     <h1 id="view-title" class="text-3xl font-black text-slate-900 dark:text-white mb-2">Platform Administration</h1>
-                    <p id="view-desc" class="text-slate-500 dark:text-slate-400">Review and approve enrollment requests from students.</p>
+                    <p id="view-desc" class="text-slate-500 dark:text-slate-400">View and manage all course enrollment records.</p>
                 </div>
             </div>
 
@@ -175,7 +175,6 @@
                     return;
                 }
 
-                // If admin, show body and init dashboard
                 adminBody.classList.remove('opacity-0');
                 adminBody.classList.add('opacity-100');
                 initDashboard();
@@ -192,7 +191,6 @@
             switchView('approvals');
         }
 
-        // View Switcher logic
         function switchView(view) {
             currentView = view;
             document.querySelectorAll('nav button').forEach(btn => {
@@ -200,61 +198,125 @@
                 btn.classList.add('text-slate-600', 'dark:text-slate-400', 'font-medium');
             });
             const activeBtn = document.getElementById(`nav-${view}`);
-            activeBtn.classList.add('active-nav', 'bg-brand-50', 'dark:bg-brand-900/20', 'text-brand-600', 'font-bold');
-            activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400', 'font-medium');
+            if (activeBtn) {
+                activeBtn.classList.add('active-nav', 'bg-brand-50', 'dark:bg-brand-900/20', 'text-brand-600', 'font-bold');
+                activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400', 'font-medium');
+            }
 
             const title = document.getElementById('view-title');
             const desc = document.getElementById('view-desc');
             const tableTitle = document.getElementById('table-title');
 
             if (view === 'approvals') {
-                title.innerText = "Platform Administration";
-                desc.innerText = "Review and approve enrollment requests.";
-                tableTitle.innerHTML = `<span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span> Enrollment Requests`;
-                fetchPendingEnrollments();
+                title.innerText = "Enrollment Management";
+                desc.innerText = "Complete history of all enrollment requests.";
+                tableTitle.innerHTML = `<span class="w-2 h-2 bg-brand-500 rounded-full"></span> All Enrollments`;
+                fetchAllEnrollments();
             } else if (view === 'courses') {
                 title.innerText = "Course Management";
-                desc.innerText = "Monitor all courses.";
+                desc.innerText = "Monitor and edit available courses.";
                 tableTitle.innerHTML = `<span class="w-2 h-2 bg-brand-500 rounded-full"></span> Catalog List`;
                 fetchCourses();
             } else if (view === 'users') {
                 title.innerText = "User Directory";
-                desc.innerText = "Manage student accounts.";
+                desc.innerText = "Manage student accounts and profiles.";
                 tableTitle.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Student Database`;
                 fetchUsers();
             }
         }
 
-        async function fetchPendingEnrollments() {
-            tableHead.innerHTML = `<tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800"><th class="px-6 py-4 font-black">Order ID</th><th class="px-6 py-4 font-black">Student</th><th class="px-6 py-4 font-black">Course</th><th class="px-6 py-4 font-black">Date</th><th class="px-6 py-4 font-black text-right">Actions</th></tr>`;
-            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading...</td></tr>`;
-            const { data, error } = await supabaseClient.from('enrollments').select('*, courses(title)').in('status', ['pending', 'pending_approval']).order('created_at', { ascending: false });
-            if (error || !data?.length) { tableBody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+        async function fetchAllEnrollments() {
+            tableHead.innerHTML = `<tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800"><th class="px-6 py-4 font-black">Order ID</th><th class="px-6 py-4 font-black">Student</th><th class="px-6 py-4 font-black">Course</th><th class="px-6 py-4 font-black">Status</th><th class="px-6 py-4 font-black text-right">Actions</th></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading all records...</td></tr>`;
+            
+            // Remove filter to show all records
+            const { data, error } = await supabaseClient
+                .from('enrollments')
+                .select('*, courses(title)')
+                .order('created_at', { ascending: false });
+
+            if (error || !data?.length) { 
+                tableBody.innerHTML = ''; 
+                emptyState.classList.remove('hidden'); 
+                return; 
+            }
+            
             emptyState.classList.add('hidden');
-            tableBody.innerHTML = data.map(row => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">#${row.order_id || '---'}</td><td class="px-6 py-4"><span class="text-sm font-bold text-slate-900 dark:text-white">${row.user_id.substring(0,8)}</span></td><td class="px-6 py-4 text-sm font-medium">${row.courses?.title || 'Unknown'}</td><td class="px-6 py-4 text-xs">${new Date(row.created_at).toLocaleDateString()}</td><td class="px-6 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="updateStatus('${row.id}', 'active')" class="p-2 text-emerald-600 bg-emerald-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></button><button onclick="updateStatus('${row.id}', 'rejected')" class="p-2 text-red-600 bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div></td></tr>`).join('');
+            tableBody.innerHTML = data.map(row => {
+                let statusBadge = '';
+                const status = row.status?.toLowerCase();
+                
+                if (status === 'active' || status === 'approved') {
+                    statusBadge = `<span class="px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase">Active</span>`;
+                } else if (status === 'pending' || status === 'pending_approval') {
+                    statusBadge = `<span class="px-2 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black uppercase">Pending</span>`;
+                } else if (status === 'rejected') {
+                    statusBadge = `<span class="px-2 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black uppercase">Rejected</span>`;
+                } else {
+                    statusBadge = `<span class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase">${status}</span>`;
+                }
+
+                // Only show action buttons if status is pending
+                const isPending = status === 'pending' || status === 'pending_approval';
+                const actions = isPending ? `
+                    <div class="flex justify-end gap-2">
+                        <button onclick="updateStatus('${row.id}', 'active')" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition" title="Approve">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                        <button onclick="updateStatus('${row.id}', 'rejected')" class="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition" title="Reject">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                ` : `
+                    <div class="flex justify-end opacity-20 pointer-events-none">
+                        <span class="text-[10px] font-bold italic">Processed</span>
+                    </div>
+                `;
+
+                return `
+                    <tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition">
+                        <td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">#${row.order_id || '---'}</td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-bold text-slate-900 dark:text-white">${row.user_id.substring(0,8)}...</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-slate-700 dark:text-slate-300">${row.courses?.title || 'Unknown Course'}</div>
+                            <div class="text-[10px] text-slate-400">${new Date(row.created_at).toLocaleDateString()}</div>
+                        </td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-right">${actions}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function fetchCourses() {
             tableHead.innerHTML = `<tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800"><th class="px-6 py-4 font-black">Thumbnail</th><th class="px-6 py-4 font-black">Course Info</th><th class="px-6 py-4 font-black">Price</th><th class="px-6 py-4 font-black text-right">Actions</th></tr>`;
-            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading courses...</td></tr>`;
             const { data } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
             if (!data?.length) { tableBody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
-            tableBody.innerHTML = data.map(course => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4"><img src="${course.thumbnail}" class="w-12 h-12 rounded-lg object-cover"></td><td class="px-6 py-4 font-bold text-sm">${course.title}</td><td class="px-6 py-4 text-sm font-bold text-brand-600">Rs. ${course.price}</td><td class="px-6 py-4 text-right"><button class="text-slate-400">Edit</button></td></tr>`).join('');
+            tableBody.innerHTML = data.map(course => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4"><img src="${course.thumbnail}" class="w-12 h-12 rounded-lg object-cover"></td><td class="px-6 py-4 font-bold text-sm">${course.title}</td><td class="px-6 py-4 text-sm font-bold text-brand-600">Rs. ${course.price}</td><td class="px-6 py-4 text-right"><button class="text-slate-400 text-xs font-bold hover:text-brand-600 transition">EDIT</button></td></tr>`).join('');
         }
 
         async function fetchUsers() {
             tableHead.innerHTML = `<tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800"><th class="px-6 py-4 font-black">Student Details</th><th class="px-6 py-4 font-black">Role</th><th class="px-6 py-4 font-black">Join Date</th><th class="px-6 py-4 font-black text-right">Actions</th></tr>`;
-            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 animate-pulse">Loading users...</td></tr>`;
             const { data } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
             if (!data?.length) { tableBody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
-            tableBody.innerHTML = data.map(user => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4"><span class="text-sm font-bold">${user.full_name || 'Student'}</span><br><span class="text-[10px] text-slate-400">${user.id}</span></td><td class="px-6 py-4"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${user.role==='admin'?'bg-brand-50 text-brand-600':'bg-emerald-50 text-emerald-600'} uppercase">${user.role || 'student'}</span></td><td class="px-6 py-4 text-xs">${new Date(user.created_at).toLocaleDateString()}</td><td class="px-6 py-4 text-right"><button class="text-slate-400">View</button></td></tr>`).join('');
+            tableBody.innerHTML = data.map(user => `<tr class="border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 transition"><td class="px-6 py-4"><span class="text-sm font-bold">${user.full_name || 'Student'}</span><br><span class="text-[10px] text-slate-400">${user.id}</span></td><td class="px-6 py-4"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${user.role==='admin'?'bg-brand-50 text-brand-600':'bg-emerald-50 text-emerald-600'} uppercase">${user.role || 'student'}</span></td><td class="px-6 py-4 text-xs">${new Date(user.created_at).toLocaleDateString()}</td><td class="px-6 py-4 text-right"><button class="text-slate-400 text-xs font-bold hover:text-brand-600 transition">VIEW</button></td></tr>`).join('');
         }
 
         async function updateStatus(id, status) {
             const { error } = await supabaseClient.from('enrollments').update({ status }).eq('id', id);
-            if (!error) { showToast(`Enrollment ${status}`); fetchPendingEnrollments(); fetchStats(); }
+            if (!error) { 
+                showToast(`Enrollment marked as ${status}`); 
+                fetchAllEnrollments(); 
+                fetchStats(); 
+            } else {
+                showToast(`Error: ${error.message}`);
+            }
         }
 
         async function fetchStats() {
