@@ -55,11 +55,13 @@
         <!-- Main Player -->
         <main class="flex-1 overflow-y-auto custom-scrollbar">
             <div id="player-view" class="hidden">
-                <div class="bg-black w-full video-container flex items-center justify-center relative group">
-                    <video id="main-video" class="w-full h-full" controls poster="">
+                <div id="media-slot" class="bg-black w-full video-container flex items-center justify-center relative group">
+                    <!-- Media content (Video or Iframe) injected here -->
+                    <video id="main-video" class="w-full h-full hidden" controls poster="">
                         <source src="" type="video/mp4">
-                        Your browser does not support the video tag.
                     </video>
+                    <iframe id="youtube-player" class="w-full h-full hidden" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    
                     <!-- Loading Overlay -->
                     <div id="video-loader" class="absolute inset-0 bg-black flex items-center justify-center z-10">
                         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
@@ -133,7 +135,6 @@
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 if (!user) throw new Error('Not authenticated');
 
-                // 1. Verify Approval again for security
                 const { data: enrollment, error: enrollErr } = await supabaseClient
                     .from('enrollments')
                     .select('status')
@@ -147,7 +148,6 @@
                     return;
                 }
 
-                // 2. Fetch Course & Lessons
                 const [courseRes, lessonsRes] = await Promise.all([
                     supabaseClient.from('courses').select('*').eq('id', courseId).single(),
                     supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
@@ -185,6 +185,13 @@
             }).join('');
         }
 
+        function getYoutubeEmbedUrl(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
+        }
+
         async function loadLesson(lessonId) {
             document.getElementById('player-view').classList.add('hidden');
             document.getElementById('loading-overlay').classList.remove('hidden');
@@ -195,27 +202,39 @@
             sessionStorage.setItem('current_lesson_id', lessonId);
             const idx = currentLessons.indexOf(lesson);
 
-            // Update UI
             document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
             document.getElementById('lesson-title').textContent = lesson.title;
             document.getElementById('lesson-desc').textContent = lesson.description || 'No description provided.';
             
-            const video = document.getElementById('main-video');
+            const videoEl = document.getElementById('main-video');
+            const youtubeEl = document.getElementById('youtube-player');
             const loader = document.getElementById('video-loader');
             
-            // Set Video Source (Assumes lesson.video_url exists)
-            video.src = lesson.video_url || 'https://www.w3schools.com/html/mov_bbb.mp4'; 
-            video.poster = currentCourse.thumbnail || '';
-            
-            video.onloadeddata = () => {
-                loader.classList.add('hidden');
-            };
+            loader.classList.remove('hidden');
 
-            // Progress Bar
+            const youtubeUrl = getYoutubeEmbedUrl(lesson.video_url);
+
+            if (youtubeUrl) {
+                // YouTube Embed
+                videoEl.classList.add('hidden');
+                videoEl.pause();
+                youtubeEl.classList.remove('hidden');
+                youtubeEl.src = youtubeUrl;
+                // Since iframes don't have a reliable 'loadeddata' like video tags, we hide loader on load
+                youtubeEl.onload = () => loader.classList.add('hidden');
+            } else {
+                // Direct Video URL
+                youtubeEl.classList.add('hidden');
+                youtubeEl.src = "";
+                videoEl.classList.remove('hidden');
+                videoEl.src = lesson.video_url || 'https://www.w3schools.com/html/mov_bbb.mp4'; 
+                videoEl.poster = currentCourse.thumbnail || '';
+                videoEl.onloadeddata = () => loader.classList.add('hidden');
+            }
+
             const progress = ((idx + 1) / currentLessons.length) * 100;
             document.getElementById('progress-bar').style.width = `${progress}%`;
 
-            // Nav buttons
             const prevBtn = document.getElementById('prev-lesson');
             const nextBtn = document.getElementById('next-lesson');
             
