@@ -104,24 +104,6 @@
             position: relative;
         }
 
-        .progress-handle {
-            position: absolute;
-            right: -6px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            background: #fff;
-            border-radius: 50%;
-            display: none;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
-
-        .progress-container:hover .progress-handle {
-            display: block;
-        }
-
-        /* Type badges */
         .type-badge {
             font-size: 9px;
             padding: 2px 6px;
@@ -167,9 +149,7 @@
 
                     <div class="custom-controls">
                         <div id="progress-container" class="progress-container">
-                            <div id="progress-fill" class="progress-fill">
-                                <div class="progress-handle"></div>
-                            </div>
+                            <div id="progress-fill" class="progress-fill"></div>
                         </div>
 
                         <div class="flex items-center gap-4 w-full">
@@ -196,7 +176,6 @@
                                     <option value="1.5" class="bg-black">1.5x</option>
                                     <option value="2" class="bg-black">2x</option>
                                 </select>
-
                                 <button id="fs-btn" class="control-btn">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                                 </button>
@@ -227,8 +206,17 @@
                 </div>
             </div>
 
-            <div id="loading-overlay" class="h-full w-full flex flex-col items-center justify-center py-20">
+            <div id="loading-overlay" class="h-[60vh] w-full flex flex-col items-center justify-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                <p class="mt-4 text-slate-500 text-sm font-medium">Fetching course content...</p>
+            </div>
+            
+            <div id="error-view" class="hidden h-[60vh] w-full flex flex-col items-center justify-center px-6 text-center">
+                <div class="bg-red-50 text-red-600 p-4 rounded-2xl mb-4">
+                    <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <p id="error-message" class="font-bold">Failed to load content.</p>
+                </div>
+                <a href="dashboard.html" class="text-emerald-600 font-bold hover:underline">Return to Dashboard</a>
             </div>
         </main>
 
@@ -256,9 +244,7 @@
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
             const s = Math.floor(seconds % 60);
-            return h > 0 ? 
-                `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : 
-                `${m}:${s.toString().padStart(2, '0')}`;
+            return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m}:${s.toString().padStart(2, '0')}`;
         }
 
         function getYouTubeId(url) {
@@ -267,23 +253,65 @@
             return (match && match[2].length === 11) ? match[2] : url;
         }
 
+        // Initialize Data Fetching immediately
+        document.addEventListener('DOMContentLoaded', initData);
+
+        async function initData() {
+            const courseId = sessionStorage.getItem('current_course_id');
+            const lessonId = sessionStorage.getItem('current_lesson_id');
+
+            if (!courseId || !lessonId) {
+                showError("No course or lesson selected. Please return to dashboard.");
+                return;
+            }
+
+            try {
+                // Fetch User for Watermark
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (user) {
+                    document.getElementById('video-watermark').textContent = `SECURE STREAM | ${user.email}`;
+                    startWatermarkMovement();
+                }
+
+                // Fetch Course and Lessons
+                const [cRes, lRes] = await Promise.all([
+                    supabaseClient.from('courses').select('*').eq('id', courseId).single(),
+                    supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
+                ]);
+
+                if (cRes.error || lRes.error) throw new Error("Database fetch failed");
+
+                currentLessons = lRes.data || [];
+                document.getElementById('nav-course-title').textContent = cRes.data?.title || 'Course';
+                
+                renderCurriculum();
+                loadLesson(lessonId, false); // false = don't try to load YT yet if not ready
+                
+                document.getElementById('loading-overlay').classList.add('hidden');
+                document.getElementById('player-view').classList.remove('hidden');
+
+            } catch (err) {
+                showError("Could not load course content. Please check your connection.");
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('error-view').classList.remove('hidden');
+            document.getElementById('error-message').textContent = msg;
+        }
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('yt-player', {
                 height: '100%',
                 width: '100%',
-                playerVars: {
-                    'autoplay': 1,
-                    'controls': 0,
-                    'rel': 0,
-                    'modestbranding': 1,
-                    'iv_load_policy': 3,
-                    'disablekb': 1
-                },
+                playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'disablekb': 1 },
                 events: {
                     'onReady': () => { 
                         isPlayerReady = true; 
                         document.getElementById('video-loader').classList.add('hidden');
-                        init(); 
+                        const activeId = sessionStorage.getItem('current_lesson_id');
+                        if (activeId) loadLesson(activeId, true);
                         startTimeUpdates();
                     },
                     'onStateChange': (event) => {
@@ -304,11 +332,10 @@
         function startTimeUpdates() {
             if (timeUpdateInterval) clearInterval(timeUpdateInterval);
             timeUpdateInterval = setInterval(() => {
-                if (player && player.getCurrentTime) {
+                if (isPlayerReady && player && player.getCurrentTime) {
                     const current = player.getCurrentTime();
                     const total = player.getDuration();
                     const pct = total > 0 ? (current / total) * 100 : 0;
-                    
                     document.getElementById('progress-fill').style.width = `${pct}%`;
                     document.getElementById('current-time').textContent = formatTime(current);
                     document.getElementById('duration').textContent = formatTime(total);
@@ -316,61 +343,31 @@
             }, 500);
         }
 
-        async function init() {
-            const courseId = sessionStorage.getItem('current_course_id');
-            const lessonId = sessionStorage.getItem('current_lesson_id');
-            if (!courseId || !lessonId) return;
-
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (user) {
-                document.getElementById('video-watermark').textContent = `SECURE STREAM | ${user.email}`;
-                startWatermarkMovement();
-            }
-
-            const [cRes, lRes] = await Promise.all([
-                supabaseClient.from('courses').select('*').eq('id', courseId).single(),
-                supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
-            ]);
-
-            currentLessons = lRes.data || [];
-            document.getElementById('nav-course-title').textContent = cRes.data?.title || 'Course';
-            renderCurriculum();
-            loadLesson(lessonId);
-        }
-
-        function loadLesson(id) {
+        function loadLesson(id, triggerPlayer = true) {
             const lesson = currentLessons.find(l => l.id === id);
             if (!lesson) return;
 
-            // HANDLE NON-VIDEO TYPES
+            // HANDLE NON-VIDEO TYPES (External Tabs)
             if (lesson.lesson_type && lesson.lesson_type !== 'video') {
-                if (lesson.video_url) {
-                    window.open(lesson.video_url, '_blank');
-                }
-                // Don't change UI/state if it's just opening a tab
+                if (lesson.video_url) window.open(lesson.video_url, '_blank');
                 return;
             }
 
-            // Load Video State
             sessionStorage.setItem('current_lesson_id', id);
             const idx = currentLessons.indexOf(lesson);
 
             document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
             document.getElementById('lesson-title').textContent = lesson.title;
             document.getElementById('lesson-desc').textContent = lesson.description || '';
-            
-            const badge = document.getElementById('lesson-type-badge');
-            badge.textContent = lesson.lesson_type || 'video';
+            document.getElementById('lesson-type-badge').textContent = lesson.lesson_type || 'video';
 
-            const ytId = getYouTubeId(lesson.video_url);
-            if (player && player.loadVideoById) {
+            if (triggerPlayer && isPlayerReady && player && player.loadVideoById) {
+                const ytId = getYouTubeId(lesson.video_url);
                 player.loadVideoById(ytId);
             }
 
             updateNavButtons(idx);
             renderCurriculum();
-            document.getElementById('loading-overlay').classList.add('hidden');
-            document.getElementById('player-view').classList.remove('hidden');
         }
 
         function updateNavButtons(idx) {
@@ -390,6 +387,8 @@
         function renderCurriculum() {
             const activeId = sessionStorage.getItem('current_lesson_id');
             const container = document.getElementById('sidebar-list');
+            if (!container) return;
+            
             container.innerHTML = currentLessons.map((l, i) => {
                 const isVideo = !l.lesson_type || l.lesson_type === 'video';
                 return `
@@ -417,30 +416,29 @@
             setInterval(() => { i = (i+1)%pos.length; el.style.top = pos[i].t; el.style.left = pos[i].l; }, 5000);
         }
 
-        // Seek Event
         document.getElementById('progress-container').onclick = function(e) {
+            if (!isPlayerReady) return;
             const rect = this.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const pct = x / rect.width;
-            const total = player.getDuration();
-            player.seekTo(total * pct, true);
+            const pct = (e.clientX - rect.left) / rect.width;
+            player.seekTo(player.getDuration() * pct, true);
         };
 
         document.getElementById('play-pause-btn').onclick = () => {
-            const state = player.getPlayerState();
-            state === 1 ? player.pauseVideo() : player.playVideo();
+            if (!isPlayerReady) return;
+            player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
         };
 
         document.getElementById('shield').onclick = () => {
-             const state = player.getPlayerState();
-             state === 1 ? player.pauseVideo() : player.playVideo();
+             if (!isPlayerReady) return;
+             player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
         };
 
         document.getElementById('volume-slider').oninput = (e) => {
-            player.setVolume(e.target.value);
+            if (isPlayerReady) player.setVolume(e.target.value);
         };
 
         document.getElementById('mute-btn').onclick = () => {
+            if (!isPlayerReady) return;
             if (player.isMuted()) {
                 player.unMute();
                 document.getElementById('volume-slider').value = player.getVolume();
@@ -451,21 +449,19 @@
         };
 
         document.getElementById('speed-selector').onchange = (e) => {
-            player.setPlaybackRate(parseFloat(e.target.value));
+            if (isPlayerReady) player.setPlaybackRate(parseFloat(e.target.value));
         };
 
         document.getElementById('fs-btn').onclick = () => {
             const container = document.getElementById('video-container-main');
             if (!document.fullscreenElement) {
-                if (container.requestFullscreen) container.requestFullscreen();
+                container.requestFullscreen?.();
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+                document.exitFullscreen?.();
             }
         };
 
-        document.getElementById('theme-toggle').onclick = () => {
-            document.documentElement.classList.toggle('dark');
-        };
+        document.getElementById('theme-toggle').onclick = () => document.documentElement.classList.toggle('dark');
     </script>
 </body>
 </html>
