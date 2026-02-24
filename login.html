@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Default to dark theme unless user has explicitly chosen light previously
         tailwind.config = { darkMode: 'class' };
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
+        if (localStorage.getItem('theme') === 'light') {
             document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
         }
     </script>
     <style>
@@ -19,19 +20,22 @@
         body { font-family: 'Inter', sans-serif; }
         .loader {
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #3b82f6;
+            border-top: 3px solid #10b981;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             animation: spin 1s linear infinite;
             display: inline-block;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Smooth background transitions */
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 min-h-screen flex items-center justify-center p-4 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen flex items-center justify-center p-4">
 
-    <div class="max-w-md w-full bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800">
+    <div class="max-w-md w-full bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 transition-all duration-300">
         <div class="text-center mb-8">
             <div class="bg-emerald-500 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M21.4,11.6l-8.4-11C12.7,0.2,12.3,0,12,0s-0.7,0.2-1,0.6l-8.4,11c-0.4,0.5-0.4,1.1-0.1,1.6c0.3,0.5,0.8,0.8,1.4,0.8h4.2l-1.5,9.2 c-0.1,0.4,0.1,0.8,0.4,1.1c0.3,0.3,0.7,0.4,1.1,0.2l11-7c0.4-0.3,0.6-0.7,0.6-1.1s-0.2-0.8-0.5-1.1L15.3,10h4.6 c0.6,0,1.1-0.3,1.4-0.8C21.7,12.7,21.7,12.1,21.4,11.6z"/></svg>
@@ -60,7 +64,10 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+                    <button type="button" id="forgot-password-btn" class="text-xs font-semibold text-emerald-600 hover:text-emerald-500 hover:underline transition-colors duration-200">Forgot password?</button>
+                </div>
                 <input type="password" id="password" required class="w-full px-4 py-2 border dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition">
             </div>
 
@@ -115,32 +122,53 @@
         });
         updateIcons();
 
-        // Auth Toggle Logic
+        // UI Selectors
         let isLogin = true;
         const toggleBtn = document.getElementById('toggle-btn');
         const regFields = document.getElementById('reg-fields');
         const termsContainer = document.getElementById('terms-container');
         const phoneInput = document.getElementById('phone');
         const termsCheckbox = document.getElementById('terms_agree');
+        const forgotPasswordBtn = document.getElementById('forgot-password-btn');
+        const submitBtn = document.getElementById('submit-btn');
 
+        // Auth Toggle Logic
         toggleBtn.addEventListener('click', () => {
             isLogin = !isLogin;
             regFields.classList.toggle('hidden', isLogin);
             
-            // Toggle Terms visibility and flex display
             if (!isLogin) {
                 termsContainer.style.display = 'flex';
+                forgotPasswordBtn.classList.add('hidden');
             } else {
                 termsContainer.style.display = 'none';
+                forgotPasswordBtn.classList.remove('hidden');
             }
             
             phoneInput.required = !isLogin;
             termsCheckbox.required = !isLogin;
             
             document.getElementById('form-title').textContent = isLogin ? 'Welcome Back' : 'Create Account';
-            document.getElementById('submit-btn').querySelector('span').textContent = isLogin ? 'Sign In' : 'Sign Up';
+            submitBtn.querySelector('span').textContent = isLogin ? 'Sign In' : 'Sign Up';
             toggleBtn.textContent = isLogin ? 'Create an account' : 'Sign in here';
+            document.getElementById('alert-box').classList.add('hidden');
         });
+
+        // Forgot Password Action - Redirect to separate page
+        forgotPasswordBtn.addEventListener('click', () => {
+            window.location.assign('forgotpassword.html');
+        });
+
+        function showAlert(msg, type = 'error') {
+            const box = document.getElementById('alert-box');
+            box.textContent = msg;
+            box.classList.remove('hidden');
+            if (type === 'success') {
+                box.className = "mb-6 p-4 rounded-lg text-sm bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+            } else {
+                box.className = "mb-6 p-4 rounded-lg text-sm bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800";
+            }
+        }
 
         // Form Submit
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
@@ -150,20 +178,26 @@
             const phone = phoneInput.value;
             const fullName = document.getElementById('full_name').value;
 
-            // Extra validation for terms if registering
             if (!isLogin && !termsCheckbox.checked) {
-                const box = document.getElementById('alert-box');
-                box.textContent = "Please agree to the Terms and Conditions to proceed.";
-                box.className = "mb-6 p-4 rounded-lg text-sm bg-yellow-50 text-yellow-700 border border-yellow-200";
+                showAlert("Please agree to the Terms and Conditions to proceed.");
                 return;
             }
+
+            const span = submitBtn.querySelector('span');
+            const originalBtnText = span.textContent;
+            span.innerHTML = '<div class="loader"></div>';
+            submitBtn.disabled = true;
 
             try {
                 let res;
                 if (isLogin) {
                     res = await supabaseClient.auth.signInWithPassword({ email, password });
                 } else {
-                    res = await supabaseClient.auth.signUp({ email, password, options: { data: { full_name: fullName, phone_number: phone } } });
+                    res = await supabaseClient.auth.signUp({ 
+                        email, 
+                        password, 
+                        options: { data: { full_name: fullName, phone_number: phone } } 
+                    });
                 }
 
                 if (res.error) throw res.error;
@@ -171,13 +205,13 @@
                 if (isLogin) {
                     window.location.assign('dashboard.html');
                 } else {
-                    alert('Registration successful! Please login.');
-                    window.location.reload();
+                    showAlert('Registration successful! Check your email for confirmation.', 'success');
+                    setTimeout(() => window.location.reload(), 3000);
                 }
             } catch (err) {
-                const box = document.getElementById('alert-box');
-                box.textContent = err.message;
-                box.className = "mb-6 p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200";
+                showAlert(err.message);
+                span.textContent = originalBtnText;
+                submitBtn.disabled = false;
             }
         });
     </script>
