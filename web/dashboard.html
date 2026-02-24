@@ -85,8 +85,8 @@
 
         <header class="mb-10 flex items-center justify-between">
             <div>
-                <h2 class="text-3xl font-black mb-2">Explore <span class="text-emerald-600">Courses</span></h2>
-                <p class="text-slate-500 dark:text-slate-400 font-medium">Browse our full library of masterclasses.</p>
+                <h2 class="text-3xl font-black mb-2">My <span class="text-emerald-600">Enrolled Courses</span></h2>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">Your personal learning library.</p>
             </div>
         </header>
 
@@ -115,7 +115,7 @@
 
             checkAdminStatus(user.id);
             loadOverview(user.id);
-            loadCourses();
+            loadCourses(user.id);
         }
 
         async function checkAdminStatus(userId) {
@@ -124,13 +124,8 @@
         }
 
         async function loadOverview(userId) {
-            // 1. Get user's last activity (this assumes a table user_progress or similar exists)
-            // For now, we'll simulate "Last Enrolled/Active" by fetching the course the user most recently "started"
-            // or we'll look at the latest lesson watched in session storage if available, 
-            // but for a persistent dashboard, we query the DB.
-            
             const { data: progressData } = await supabaseClient
-                .from('user_progress') // You'll need this table to track completion: lesson_id, user_id, completed (bool), last_watched (timestamp)
+                .from('user_progress')
                 .select('*, lessons(course_id, title, courses(title))')
                 .eq('user_id', userId)
                 .order('updated_at', { ascending: false })
@@ -143,7 +138,6 @@
                 const lessonTitle = latest.lessons.title;
                 const lessonId = latest.lesson_id;
 
-                // 2. Calculate Progress for this specific course
                 const { data: allLessons } = await supabaseClient.from('lessons').select('id').eq('course_id', courseId);
                 const { data: completedLessons } = await supabaseClient.from('user_progress')
                     .select('lesson_id')
@@ -153,7 +147,6 @@
 
                 const progressPct = allLessons.length > 0 ? Math.round((completedLessons.length / allLessons.length) * 100) : 0;
 
-                // Update UI
                 document.getElementById('resume-section').classList.remove('hidden');
                 document.getElementById('last-course-title').textContent = courseTitle;
                 document.getElementById('last-lesson-title').textContent = lessonTitle;
@@ -161,7 +154,6 @@
                 document.getElementById('circle-pct').textContent = `${progressPct}%`;
                 document.getElementById('last-course-progress-bar').style.width = `${progressPct}%`;
                 
-                // SVG Ring Update
                 const offset = 251.2 - (progressPct / 100) * 251.2;
                 document.getElementById('progress-circle').style.strokeDashoffset = offset;
 
@@ -173,9 +165,29 @@
             }
         }
 
-        async function loadCourses() {
-            const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+        async function loadCourses(userId) {
             const grid = document.getElementById('course-grid');
+            
+            // 1. Get IDs of courses the user has progress in
+            const { data: progress } = await supabaseClient
+                .from('user_progress')
+                .select('lessons(course_id)')
+                .eq('user_id', userId);
+
+            if (!progress || progress.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">You haven't enrolled in any courses yet.</div>`;
+                return;
+            }
+
+            // Extract unique course IDs
+            const enrolledCourseIds = [...new Set(progress.map(p => p.lessons.course_id))];
+
+            // 2. Fetch only those courses
+            const { data: courses } = await supabaseClient
+                .from('courses')
+                .select('*')
+                .in('id', enrolledCourseIds)
+                .order('created_at', { ascending: false });
             
             if (courses && courses.length > 0) {
                 grid.innerHTML = courses.map(course => `
@@ -195,7 +207,7 @@
                     </div>
                 `).join('');
             } else {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">No courses available yet.</div>`;
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">No enrolled courses found.</div>`;
             }
         }
 
