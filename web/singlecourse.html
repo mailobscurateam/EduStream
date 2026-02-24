@@ -211,7 +211,13 @@
             document.getElementById('course-category').textContent = course.category || 'Professional';
             document.getElementById('course-banner').src = course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200';
             document.getElementById('course-desc').textContent = course.description;
-            document.getElementById('course-price').textContent = course.price > 0 ? `$${course.price}` : 'Free';
+            
+            // Updated currency format to Sri Lankan Rupees (Rs.)
+            const price = course.price > 0 
+                ? `Rs. ${parseFloat(course.price).toLocaleString('en-LK')}` 
+                : 'Free';
+            document.getElementById('course-price').textContent = price;
+            
             document.getElementById('lesson-count').textContent = `${lessons.length} Lessons`;
 
             const lessonListEl = document.getElementById('lesson-list');
