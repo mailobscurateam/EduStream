@@ -340,12 +340,37 @@
             currentLessons = lRes.data;
             document.getElementById('nav-course-title').textContent = cRes.data.title;
             renderCurriculum();
+            
+            // Check if current lesson is video, otherwise find the first video lesson or just load metadata
             loadLesson(lessonId);
+        }
+
+        function handleLessonClick(lesson) {
+            if (lesson.lesson_type !== 'video') {
+                // If not video, open URL in new tab
+                window.open(lesson.video_url, '_blank');
+            } else {
+                // If video, load in current player
+                loadLesson(lesson.id);
+            }
         }
 
         function loadLesson(id) {
             const lesson = currentLessons.find(l => l.id === id);
-            if (!lesson || !player) return;
+            if (!lesson) return;
+
+            // If this lesson is not a video, we don't "load" it into the player view
+            // but we might want to update metadata if it's the landing lesson
+            if (lesson.lesson_type !== 'video') {
+                // Find next available video lesson if current is being "auto-loaded"
+                const firstVideo = currentLessons.find(l => l.lesson_type === 'video');
+                if (firstVideo && id === sessionStorage.getItem('current_lesson_id')) {
+                    loadLesson(firstVideo.id);
+                    return;
+                }
+            }
+
+            if (!player) return;
 
             sessionStorage.setItem('current_lesson_id', id);
             const idx = currentLessons.indexOf(lesson);
@@ -366,24 +391,56 @@
         function updateNavButtons(idx) {
             const prev = document.getElementById('prev-lesson');
             const next = document.getElementById('next-lesson');
-            prev.disabled = idx === 0;
-            prev.onclick = () => loadLesson(currentLessons[idx - 1].id);
-            if (idx === currentLessons.length - 1) {
+            
+            // For Previous: find previous video
+            let prevIdx = -1;
+            for(let i = idx - 1; i >= 0; i--) {
+                if(currentLessons[i].lesson_type === 'video') {
+                    prevIdx = i;
+                    break;
+                }
+            }
+            prev.disabled = prevIdx === -1;
+            prev.onclick = () => loadLesson(currentLessons[prevIdx].id);
+
+            // For Next: find next video
+            let nextIdx = -1;
+            for(let i = idx + 1; i < currentLessons.length; i++) {
+                if(currentLessons[i].lesson_type === 'video') {
+                    nextIdx = i;
+                    break;
+                }
+            }
+
+            if (nextIdx === -1) {
                 next.textContent = 'Finish';
                 next.onclick = () => window.location.href = 'dashboard.html';
             } else {
                 next.textContent = 'Next Lesson';
-                next.onclick = () => loadLesson(currentLessons[idx + 1].id);
+                next.onclick = () => loadLesson(currentLessons[nextIdx].id);
             }
         }
 
         function renderCurriculum() {
             const activeId = sessionStorage.getItem('current_lesson_id');
-            document.getElementById('sidebar-list').innerHTML = currentLessons.map((l, i) => `
-                <div onclick="loadLesson('${l.id}')" class="p-3 rounded-xl cursor-pointer ${l.id === activeId ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}">
-                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${l.title}</h4>
+            document.getElementById('sidebar-list').innerHTML = currentLessons.map((l, i) => {
+                const isVideo = l.lesson_type === 'video';
+                const isActive = l.id === activeId;
+                
+                return `
+                <div onclick="handleLessonClick(${JSON.stringify(l).replace(/"/g, '&quot;')})" 
+                     class="p-3 rounded-xl cursor-pointer flex items-center justify-between group ${isActive ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}">
+                    <div class="flex-1 truncate">
+                        <h4 class="text-xs font-bold ${isActive ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-300'} truncate">${l.title}</h4>
+                        <span class="text-[10px] text-slate-400 uppercase font-medium">${isVideo ? 'Video' : 'Resource'}</span>
+                    </div>
+                    ${!isVideo ? `
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                    ` : ''}
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function startWatermarkMovement() {
