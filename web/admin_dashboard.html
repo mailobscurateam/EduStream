@@ -233,11 +233,11 @@
 
                 const { data: profile, error } = await supabaseClient
                     .from('profiles')
-                    .select('roles')
+                    .select('role')
                     .eq('id', user.id)
                     .single();
 
-                if (error || !profile || profile.roles !== 'admin') {
+                if (error || !profile || profile.role !== 'admin') {
                     console.error("Access denied: Not an admin");
                     window.location.href = 'dashboard.html';
                     return;
