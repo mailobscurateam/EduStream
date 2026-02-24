@@ -28,7 +28,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: calc(100% - 60px); 
+            height: calc(100% - 80px); 
             z-index: 10;
             background: transparent;
             cursor: pointer;
@@ -52,13 +52,11 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 60px;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.6), transparent);
             z-index: 30;
             display: flex;
-            align-items: center;
-            padding: 0 20px;
-            gap: 15px;
+            flex-direction: column;
+            padding: 10px 20px 20px 20px;
             opacity: 0;
             transition: opacity 0.3s;
         }
@@ -81,6 +79,48 @@
         input[type=range] {
             accent-color: #10b981;
             cursor: pointer;
+            height: 4px;
+        }
+
+        /* Progress Bar Styling */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: height 0.1s;
+        }
+        
+        .progress-container:hover {
+            height: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #10b981;
+            border-radius: 3px;
+            width: 0%;
+            position: relative;
+        }
+
+        .progress-handle {
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            display: none;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        .progress-container:hover .progress-handle {
+            display: block;
         }
     </style>
     <script>
@@ -125,33 +165,47 @@
 
                     <!-- Custom Control Bar -->
                     <div class="custom-controls">
-                        <!-- Play/Pause -->
-                        <button id="play-pause-btn" class="control-btn">
-                            <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                            <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                        </button>
-
-                        <!-- Volume -->
-                        <div class="flex items-center gap-2 group/vol">
-                            <button id="mute-btn" class="control-btn">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                            </button>
-                            <input id="volume-slider" type="range" min="0" max="100" value="100" class="w-0 group-hover/vol:w-20 transition-all duration-300">
+                        <!-- Progress Bar Container -->
+                        <div id="progress-container" class="progress-container">
+                            <div id="progress-fill" class="progress-fill">
+                                <div class="progress-handle"></div>
+                            </div>
                         </div>
 
-                        <!-- Speed -->
-                        <div class="ml-auto flex items-center gap-4">
-                            <select id="speed-selector" class="bg-transparent text-white text-xs font-bold border border-white/20 rounded px-2 py-1 outline-none">
-                                <option value="0.5" class="bg-black">0.5x</option>
-                                <option value="1" class="bg-black" selected>1x</option>
-                                <option value="1.5" class="bg-black">1.5x</option>
-                                <option value="2" class="bg-black">2x</option>
-                            </select>
-
-                            <!-- Fullscreen -->
-                            <button id="fs-btn" class="control-btn">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        <div class="flex items-center gap-4 w-full">
+                            <!-- Play/Pause -->
+                            <button id="play-pause-btn" class="control-btn">
+                                <svg id="play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <svg id="pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                             </button>
+
+                            <!-- Volume -->
+                            <div class="flex items-center gap-2 group/vol">
+                                <button id="mute-btn" class="control-btn">
+                                    <svg id="volume-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                                </button>
+                                <input id="volume-slider" type="range" min="0" max="100" value="100" class="w-0 group-hover/vol:w-20 transition-all duration-300">
+                            </div>
+
+                            <!-- Time Display -->
+                            <div class="text-white text-xs font-medium font-mono select-none">
+                                <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+                            </div>
+
+                            <!-- Speed & FS -->
+                            <div class="ml-auto flex items-center gap-4">
+                                <select id="speed-selector" class="bg-transparent text-white text-xs font-bold border border-white/20 rounded px-2 py-1 outline-none">
+                                    <option value="0.5" class="bg-black">0.5x</option>
+                                    <option value="1" class="bg-black" selected>1x</option>
+                                    <option value="1.5" class="bg-black">1.5x</option>
+                                    <option value="2" class="bg-black">2x</option>
+                                </select>
+
+                                <!-- Fullscreen -->
+                                <button id="fs-btn" class="control-btn">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -198,6 +252,16 @@
         let player;
         let currentLessons = [];
         let isPlayerReady = false;
+        let timeUpdateInterval;
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return h > 0 ? 
+                `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : 
+                `${m}:${s.toString().padStart(2, '0')}`;
+        }
 
         // Extract YT ID
         function getYouTubeId(url) {
@@ -217,13 +281,15 @@
                     'rel': 0,
                     'modestbranding': 1,
                     'iv_load_policy': 3,
-                    'disablekb': 1
+                    'disablekb': 1,
+                    'origin': window.location.origin
                 },
                 events: {
                     'onReady': () => { 
                         isPlayerReady = true; 
                         document.getElementById('video-loader').classList.add('hidden');
                         init(); 
+                        startTimeUpdates();
                     },
                     'onStateChange': (event) => {
                         const playIcon = document.getElementById('play-icon');
@@ -238,6 +304,21 @@
                     }
                 }
             });
+        }
+
+        function startTimeUpdates() {
+            if (timeUpdateInterval) clearInterval(timeUpdateInterval);
+            timeUpdateInterval = setInterval(() => {
+                if (player && player.getCurrentTime) {
+                    const current = player.getCurrentTime();
+                    const total = player.getDuration();
+                    const pct = (current / total) * 100;
+                    
+                    document.getElementById('progress-fill').style.width = `${pct}%`;
+                    document.getElementById('current-time').textContent = formatTime(current);
+                    document.getElementById('duration').textContent = formatTime(total);
+                }
+            }, 500);
         }
 
         async function init() {
@@ -323,12 +404,27 @@
              state === 1 ? player.pauseVideo() : player.playVideo();
         };
 
+        // Seek functionality
+        document.getElementById('progress-container').onclick = function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const pct = x / rect.width;
+            const total = player.getDuration();
+            player.seekTo(total * pct, true);
+        };
+
         document.getElementById('volume-slider').oninput = (e) => {
             player.setVolume(e.target.value);
         };
 
         document.getElementById('mute-btn').onclick = () => {
-            player.isMuted() ? player.unMute() : player.mute();
+            if (player.isMuted()) {
+                player.unMute();
+                document.getElementById('volume-slider').value = player.getVolume();
+            } else {
+                player.mute();
+                document.getElementById('volume-slider').value = 0;
+            }
         };
 
         document.getElementById('speed-selector').onchange = (e) => {
@@ -337,8 +433,12 @@
 
         document.getElementById('fs-btn').onclick = () => {
             const container = document.getElementById('video-container-main');
-            if (!document.fullscreenElement) container.requestFullscreen();
-            else document.exitFullscreen();
+            if (!document.fullscreenElement) {
+                if (container.requestFullscreen) container.requestFullscreen();
+                else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
         };
 
         document.getElementById('theme-toggle').onclick = () => {
