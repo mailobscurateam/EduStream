@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playing Lesson | EduStream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+        .video-container { aspect-ratio: 16 / 9; }
+    </style>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { emerald: { 500: '#10b981', 600: '#059669', 700: '#047857' } }
+                }
+            }
+        };
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16 flex items-center shrink-0 z-50">
+        <div class="max-w-full w-full px-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="dashboard.html" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition text-slate-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </a>
+                <h1 id="nav-course-title" class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md uppercase tracking-wider">Loading Course...</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="progress-container" class="hidden md:flex flex-col items-end mr-4">
+                    <span class="text-[10px] text-slate-500 font-bold uppercase">Your Progress</span>
+                    <div class="w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mt-1">
+                        <div id="progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Main Player -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar">
+            <div id="player-view" class="hidden">
+                <div class="bg-black w-full video-container flex items-center justify-center relative group">
+                    <video id="main-video" class="w-full h-full" controls poster="">
+                        <source src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <!-- Loading Overlay -->
+                    <div id="video-loader" class="absolute inset-0 bg-black flex items-center justify-center z-10">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
+                    </div>
+                </div>
+
+                <div class="max-w-5xl mx-auto px-6 py-10">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                        <div>
+                            <span id="lesson-index" class="text-emerald-500 text-xs font-black uppercase tracking-widest mb-2 block">Lesson 0</span>
+                            <h2 id="lesson-title" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white leading-tight">Loading Lesson Title...</h2>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="prev-lesson" class="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">Previous</button>
+                            <button id="next-lesson" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/30 disabled:opacity-30">Next Lesson</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 border-t border-slate-200 dark:border-slate-800 pt-8">
+                        <div class="md:col-span-2">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Description</h3>
+                            <p id="lesson-desc" class="text-slate-600 dark:text-slate-400 leading-relaxed">No description available for this lesson.</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Resources</h3>
+                            <div id="resources-list" class="space-y-3">
+                                <p class="text-xs text-slate-500 italic">No resources provided.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading-overlay" class="h-full w-full flex flex-col items-center justify-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
+                <p class="text-slate-500 font-medium">Loading content...</p>
+            </div>
+        </main>
+
+        <!-- Sidebar Curriculum -->
+        <aside class="hidden lg:flex w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex-col shrink-0">
+            <div class="p-6 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Course Curriculum</h3>
+            </div>
+            <div id="sidebar-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                <!-- Curriculum lessons -->
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const CONFIG = {
+            SUPABASE_URL: 'https://pkqpvnrtxtqlngwtfnhy.supabase.co',
+            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0'
+        };
+
+        const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        let currentLessons = [];
+        let currentCourse = null;
+
+        async function init() {
+            const courseId = sessionStorage.getItem('current_course_id');
+            const lessonId = sessionStorage.getItem('current_lesson_id');
+
+            if (!courseId || !lessonId) {
+                window.location.href = 'course.html';
+                return;
+            }
+
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) throw new Error('Not authenticated');
+
+                // 1. Verify Approval again for security
+                const { data: enrollment, error: enrollErr } = await supabaseClient
+                    .from('enrollments')
+                    .select('status')
+                    .eq('course_id', courseId)
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (enrollErr || enrollment.status !== 'approved') {
+                    alert("Access Denied: Enrollment not approved.");
+                    window.location.href = 'course.html';
+                    return;
+                }
+
+                // 2. Fetch Course & Lessons
+                const [courseRes, lessonsRes] = await Promise.all([
+                    supabaseClient.from('courses').select('*').eq('id', courseId).single(),
+                    supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
+                ]);
+
+                currentCourse = courseRes.data;
+                currentLessons = lessonsRes.data;
+
+                renderCurriculum();
+                loadLesson(lessonId);
+
+            } catch (err) {
+                console.error(err);
+                alert("Critical error loading the player.");
+            }
+        }
+
+        function renderCurriculum() {
+            document.getElementById('nav-course-title').textContent = currentCourse.title;
+            const sidebar = document.getElementById('sidebar-list');
+            
+            sidebar.innerHTML = currentLessons.map((lesson, idx) => {
+                const isActive = lesson.id === sessionStorage.getItem('current_lesson_id');
+                return `
+                    <div onclick="loadLesson('${lesson.id}')" class="group flex items-start gap-3 p-3 rounded-xl transition-all cursor-pointer ${isActive ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent'}">
+                        <div class="shrink-0 w-6 h-6 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'} flex items-center justify-center text-[10px] font-bold">
+                            ${idx + 1}
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <h4 class="text-xs font-bold ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'} truncate">${lesson.title}</h4>
+                            <span class="text-[10px] text-slate-400 font-medium">${lesson.duration || '5:00'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadLesson(lessonId) {
+            document.getElementById('player-view').classList.add('hidden');
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            
+            const lesson = currentLessons.find(l => l.id === lessonId);
+            if (!lesson) return;
+
+            sessionStorage.setItem('current_lesson_id', lessonId);
+            const idx = currentLessons.indexOf(lesson);
+
+            // Update UI
+            document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
+            document.getElementById('lesson-title').textContent = lesson.title;
+            document.getElementById('lesson-desc').textContent = lesson.description || 'No description provided.';
+            
+            const video = document.getElementById('main-video');
+            const loader = document.getElementById('video-loader');
+            
+            // Set Video Source (Assumes lesson.video_url exists)
+            video.src = lesson.video_url || 'https://www.w3schools.com/html/mov_bbb.mp4'; 
+            video.poster = currentCourse.thumbnail || '';
+            
+            video.onloadeddata = () => {
+                loader.classList.add('hidden');
+            };
+
+            // Progress Bar
+            const progress = ((idx + 1) / currentLessons.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            // Nav buttons
+            const prevBtn = document.getElementById('prev-lesson');
+            const nextBtn = document.getElementById('next-lesson');
+            
+            prevBtn.disabled = idx === 0;
+            prevBtn.onclick = () => loadLesson(currentLessons[idx - 1].id);
+            
+            if (idx === currentLessons.length - 1) {
+                nextBtn.textContent = 'Finish Course';
+                nextBtn.onclick = () => {
+                    alert("Congratulations! You've reached the end.");
+                    window.location.href = 'dashboard.html';
+                };
+            } else {
+                nextBtn.textContent = 'Next Lesson';
+                nextBtn.onclick = () => loadLesson(currentLessons[idx + 1].id);
+            }
+
+            renderCurriculum();
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('player-view').classList.remove('hidden');
+        }
+
+        document.getElementById('theme-toggle').onclick = () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        };
+
+        init();
+    </script>
+</body>
+</html>
