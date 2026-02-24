@@ -5,22 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playing Lesson | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Plyr Custom Player Assets -->
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
-
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
         
-        :root {
-            --plyr-color-main: #10b981;
-            --plyr-video-background: #000;
-        }
         .video-container { 
             aspect-ratio: 16 / 9; 
             position: relative; 
@@ -28,8 +19,6 @@
             background: #000; 
             border-radius: 0.5rem;
         }
-        .plyr--full-ui { height: 100%; }
-        .plyr__video-embed { height: 100%; }
         
         /* Interaction Shield: Blocks right-clicks and direct YT interactions */
         .video-interaction-shield {
@@ -37,26 +26,25 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: calc(100% - 60px); /* Leave bottom controls accessible */
+            height: calc(100% - 50px); /* Leave bottom bar area slightly reachable if needed, or set to 100% to block all */
             z-index: 10;
             background: transparent;
         }
 
-        /* Watermark Styles */
         #video-watermark {
             position: absolute;
             z-index: 20;
             pointer-events: none;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 12px;
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 11px;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
             user-select: none;
             padding: 10px;
-            transition: all 0.5s ease-in-out;
+            transition: all 1s ease-in-out;
+            white-space: nowrap;
         }
 
-        /* Anti-tamper Overlay */
         #security-lockout {
             display: none;
             position: fixed;
@@ -81,35 +69,25 @@
             document.documentElement.classList.add('dark');
         }
 
-        // --- SECURITY / DEVELOPER OPTIONS DETECTION ---
         (function() {
             const triggerLockout = () => {
-                console.warn("Security policy violation detected.");
-                // Ensure a valid URL is used for redirection
                 const redirectPath = "kakahanalana.html";
-                // Only redirect if not already on the lockout page or in a local-only preview environment that might bug out on relative paths
                 try {
-                    window.location.href = redirectPath;
+                    window.location.replace(redirectPath);
                 } catch (e) {
-                    // Fallback for strict environments
-                    window.location.replace(window.location.origin + "/" + redirectPath);
+                    window.location.href = redirectPath;
                 }
             };
 
             const detectDevTools = () => {
                 const threshold = 160;
-                // Add secondary check: some environments trigger resize on load
-                const isWindowSmall = window.outerWidth - window.innerWidth > threshold || 
-                                    window.outerHeight - window.innerHeight > threshold;
-                
-                if (isWindowSmall) {
-                    triggerLockout();
-                }
+                const isWindowSmall = (window.outerWidth - window.innerWidth > threshold) || 
+                                    (window.outerHeight - window.innerHeight > threshold);
+                if (isWindowSmall) triggerLockout();
             };
 
             window.addEventListener('resize', detectDevTools);
             document.addEventListener('contextmenu', e => e.preventDefault());
-            
             document.addEventListener('keydown', e => {
                 if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85)) {
                     triggerLockout();
@@ -121,10 +99,9 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 flex flex-col">
 
-    <!-- Security Lockout Screen -->
     <div id="security-lockout">
-        <h2 class="text-2xl font-bold">Unauthorized Access Detected</h2>
-        <p class="mt-4 text-slate-400">Developer tools are disabled for this secure stream.</p>
+        <h2 class="text-2xl font-bold">Unauthorized Access</h2>
+        <p class="mt-4 text-slate-400">Security violation detected.</p>
     </div>
 
     <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16 flex items-center shrink-0 z-50">
@@ -152,10 +129,17 @@
     <div class="flex flex-1 overflow-hidden">
         <main class="flex-1 overflow-y-auto custom-scrollbar">
             <div id="player-view" class="hidden">
-                <div class="bg-black w-full video-container relative group">
-                    <div id="player-wrapper" class="h-full w-full">
-                        <div id="player" data-plyr-provider="youtube" data-plyr-embed-id=""></div>
-                    </div>
+                <div class="bg-black w-full video-container relative">
+                    <!-- Standard YouTube Iframe -->
+                    <iframe 
+                        id="yt-iframe"
+                        class="w-full h-full"
+                        src="" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        referrerpolicy="strict-origin-when-cross-origin" 
+                        allowfullscreen>
+                    </iframe>
                     
                     <!-- Interaction Shield -->
                     <div class="video-interaction-shield"></div>
@@ -197,7 +181,7 @@
 
             <div id="loading-overlay" class="h-full w-full flex flex-col items-center justify-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-                <p class="text-slate-500 font-medium">Authorizing secure stream...</p>
+                <p class="text-slate-500 font-medium">Preparing secure stream...</p>
             </div>
         </main>
 
@@ -218,10 +202,8 @@
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         let currentLessons = [];
         let currentCourse = null;
-        let playerInstance = null;
         let currentUser = null;
 
-        // Helper to extract YouTube ID
         function getYouTubeId(url) {
             if (!url) return null;
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -243,9 +225,8 @@
                 if (!user || authErr) throw new Error('Not authenticated');
                 currentUser = user;
 
-                // Update Watermark with User ID
                 const watermark = document.getElementById('video-watermark');
-                watermark.textContent = `EduStream | ID: ${user.id.substring(0, 8)}... | ${user.email}`;
+                watermark.textContent = `EduStream | ID: ${user.id.substring(0, 8)} | ${user.email}`;
                 startWatermarkMovement();
 
                 const { data: enrollment, error: enrollErr } = await supabaseClient
@@ -256,7 +237,7 @@
                     .single();
 
                 if (enrollErr || enrollment.status !== 'approved') {
-                    alert("Access Denied: Enrollment not approved.");
+                    alert("Enrollment not approved.");
                     window.location.href = 'course.html';
                     return;
                 }
@@ -269,58 +250,34 @@
                 currentCourse = courseRes.data;
                 currentLessons = lessonsRes.data;
 
-                // PLYR INITIALIZATION
-                playerInstance = new Plyr('#player', {
-                    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
-                    settings: ['quality', 'speed'],
-                    youtube: { 
-                        noCookie: true, 
-                        rel: 0, 
-                        showinfo: 0, 
-                        iv_load_policy: 3, 
-                        modestbranding: 1,
-                        fs: 0
-                    }
-                });
-
-                playerInstance.on('ready', () => {
-                    document.getElementById('video-loader').classList.add('hidden');
-                });
-
-                playerInstance.on('ended', () => {
-                    const activeId = sessionStorage.getItem('current_lesson_id');
-                    const idx = currentLessons.findIndex(l => l.id === activeId);
-                    if (idx < currentLessons.length - 1) {
-                        loadLesson(currentLessons[idx + 1].id);
-                    }
-                });
-
                 renderCurriculum();
                 loadLesson(lessonId);
 
+                // Hide loader once iframe loads
+                document.getElementById('yt-iframe').onload = () => {
+                    document.getElementById('video-loader').classList.add('hidden');
+                };
+
             } catch (err) {
                 console.error("Init Error:", err);
-                alert("Authorization failed.");
             }
         }
 
-        // Logic to move watermark periodically to prevent fixed-mask removal
         function startWatermarkMovement() {
             const watermark = document.getElementById('video-watermark');
             const positions = [
-                { top: '10%', left: '10%' },
-                { top: '10%', left: '70%' },
-                { top: '80%', left: '10%' },
-                { top: '80%', left: '70%' },
-                { top: '45%', left: '40%' }
+                { top: '5%', left: '5%' },
+                { top: '5%', left: '75%' },
+                { top: '85%', left: '5%' },
+                { top: '85%', left: '75%' },
+                { top: '40%', left: '40%' }
             ];
             let currentIdx = 0;
-            
             setInterval(() => {
                 currentIdx = (currentIdx + 1) % positions.length;
                 watermark.style.top = positions[currentIdx].top;
                 watermark.style.left = positions[currentIdx].left;
-            }, 10000); // Move every 10 seconds
+            }, 8000);
         }
 
         function renderCurriculum() {
@@ -357,23 +314,15 @@
 
             document.getElementById('lesson-index').textContent = `Lesson ${idx + 1}`;
             document.getElementById('lesson-title').textContent = lesson.title;
-            document.getElementById('lesson-desc').textContent = lesson.description || 'No description provided.';
+            document.getElementById('lesson-desc').textContent = lesson.description || '';
             
             const loader = document.getElementById('video-loader');
             loader.classList.remove('hidden');
 
             const ytId = getYouTubeId(lesson.video_url);
-
-            if (playerInstance) {
-                // Directly setting the source using Plyr's source property
-                playerInstance.source = {
-                    type: 'video',
-                    sources: [{ 
-                        src: ytId, 
-                        provider: 'youtube' 
-                    }],
-                };
-            }
+            // Constructing iframe src with modest branding and no related videos
+            const iframeSrc = `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&autoplay=1`;
+            document.getElementById('yt-iframe').src = iframeSrc;
 
             const progress = ((idx + 1) / currentLessons.length) * 100;
             document.getElementById('progress-bar').style.width = `${progress}%`;
