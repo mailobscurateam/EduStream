@@ -10,6 +10,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+        
+        .progress-ring { transition: stroke-dashoffset 0.35s; transform: rotate(-90deg); transform-origin: 50% 50%; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -24,7 +26,6 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <!-- Admin Button: Hidden by default -->
                 <a id="admin-link" href="admindashboard.html" class="hidden px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black uppercase rounded-xl hover:scale-105 transition">
                     Admin Panel
                 </a>
@@ -38,9 +39,55 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-6 py-12">
-        <header class="mb-10">
-            <h2 class="text-3xl font-black mb-2">My Learning <span class="text-emerald-600">Journey</span></h2>
-            <p class="text-slate-500 dark:text-slate-400 font-medium">Pick up where you left off or start something new.</p>
+        <!-- Resume Section (Overview) -->
+        <section id="resume-section" class="mb-12 hidden">
+            <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Continue Learning</h2>
+            <div class="bg-emerald-600 rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl shadow-emerald-600/20 relative overflow-hidden group">
+                <!-- Decorative Circle -->
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    <div class="max-w-xl">
+                        <span id="last-course-category" class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">Last Active Course</span>
+                        <h3 id="last-course-title" class="text-3xl md:text-4xl font-black mb-4 leading-tight">...</h3>
+                        
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                                <div id="last-course-progress-bar" class="h-full bg-white rounded-full transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                            <span id="last-course-pct" class="font-black text-sm">0%</span>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-4">
+                            <button id="resume-btn" class="px-8 py-4 bg-white text-emerald-600 rounded-2xl font-black shadow-lg hover:scale-105 transition active:scale-95">
+                                Resume Lesson
+                            </button>
+                            <p class="text-emerald-100 text-sm font-medium">
+                                Last watched: <span id="last-lesson-title" class="font-bold text-white italic">...</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="hidden md:flex items-center justify-center">
+                        <div class="relative w-32 h-32">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle class="text-white/10" stroke-width="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
+                                <circle id="progress-circle" class="text-white progress-ring" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span id="circle-pct" class="text-xl font-black">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <header class="mb-10 flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-black mb-2">Explore <span class="text-emerald-600">Courses</span></h2>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">Browse our full library of masterclasses.</p>
+            </div>
         </header>
 
         <div id="course-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -66,43 +113,83 @@
                 return;
             }
 
-            // Check User Role
             checkAdminStatus(user.id);
+            loadOverview(user.id);
             loadCourses();
         }
 
         async function checkAdminStatus(userId) {
-            const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single();
+            const { data } = await supabaseClient.from('profiles').select('role').eq('id', userId).single();
+            if (data?.role === 'admin') document.getElementById('admin-link').classList.remove('hidden');
+        }
 
-            if (data && data.role === 'admin') {
-                document.getElementById('admin-link').classList.remove('hidden');
+        async function loadOverview(userId) {
+            // 1. Get user's last activity (this assumes a table user_progress or similar exists)
+            // For now, we'll simulate "Last Enrolled/Active" by fetching the course the user most recently "started"
+            // or we'll look at the latest lesson watched in session storage if available, 
+            // but for a persistent dashboard, we query the DB.
+            
+            const { data: progressData } = await supabaseClient
+                .from('user_progress') // You'll need this table to track completion: lesson_id, user_id, completed (bool), last_watched (timestamp)
+                .select('*, lessons(course_id, title, courses(title))')
+                .eq('user_id', userId)
+                .order('updated_at', { ascending: false })
+                .limit(1);
+
+            if (progressData && progressData.length > 0) {
+                const latest = progressData[0];
+                const courseId = latest.lessons.course_id;
+                const courseTitle = latest.lessons.courses.title;
+                const lessonTitle = latest.lessons.title;
+                const lessonId = latest.lesson_id;
+
+                // 2. Calculate Progress for this specific course
+                const { data: allLessons } = await supabaseClient.from('lessons').select('id').eq('course_id', courseId);
+                const { data: completedLessons } = await supabaseClient.from('user_progress')
+                    .select('lesson_id')
+                    .eq('user_id', userId)
+                    .eq('completed', true)
+                    .in('lesson_id', allLessons.map(l => l.id));
+
+                const progressPct = allLessons.length > 0 ? Math.round((completedLessons.length / allLessons.length) * 100) : 0;
+
+                // Update UI
+                document.getElementById('resume-section').classList.remove('hidden');
+                document.getElementById('last-course-title').textContent = courseTitle;
+                document.getElementById('last-lesson-title').textContent = lessonTitle;
+                document.getElementById('last-course-pct').textContent = `${progressPct}%`;
+                document.getElementById('circle-pct').textContent = `${progressPct}%`;
+                document.getElementById('last-course-progress-bar').style.width = `${progressPct}%`;
+                
+                // SVG Ring Update
+                const offset = 251.2 - (progressPct / 100) * 251.2;
+                document.getElementById('progress-circle').style.strokeDashoffset = offset;
+
+                document.getElementById('resume-btn').onclick = () => {
+                    sessionStorage.setItem('current_course_id', courseId);
+                    sessionStorage.setItem('current_lesson_id', lessonId);
+                    window.location.href = 'player.html';
+                };
             }
         }
 
         async function loadCourses() {
-            const { data: courses, error } = await supabaseClient
-                .from('courses')
-                .select('*')
-                .order('created_at', { ascending: false });
-
+            const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
             const grid = document.getElementById('course-grid');
+            
             if (courses && courses.length > 0) {
                 grid.innerHTML = courses.map(course => `
-                    <div class="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                        <div class="aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
+                    <div class="group bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+                        <div class="aspect-[16/10] bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
                             <img src="${course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800'}" 
-                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="${course.title}">
-                            <div class="absolute inset-0 bg-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                 class="w-full h-full object-cover group-hover:scale-110 transition duration-700" alt="${course.title}">
+                            <div class="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                         </div>
-                        <div class="p-6">
-                            <h3 class="text-xl font-black mb-2 line-clamp-1">${course.title}</h3>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 line-clamp-2">${course.description || 'No description available.'}</p>
-                            <button onclick="startCourse('${course.id}')" class="w-full py-3 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition">
-                                Start Learning
+                        <div class="p-8">
+                            <h3 class="text-xl font-black mb-3 line-clamp-1 group-hover:text-emerald-600 transition-colors">${course.title}</h3>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm mb-8 line-clamp-2 leading-relaxed">${course.description || 'Elevate your skills with this professionally curated course.'}</p>
+                            <button onclick="startCourse('${course.id}')" class="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white group-hover:bg-emerald-600 group-hover:text-white rounded-2xl font-black transition-all duration-300">
+                                View Course
                             </button>
                         </div>
                     </div>
@@ -113,7 +200,6 @@
         }
 
         async function startCourse(courseId) {
-            // Fetch first lesson of this course to redirect
             const { data: lessons } = await supabaseClient
                 .from('lessons')
                 .select('id')
