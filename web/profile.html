@@ -90,7 +90,6 @@
 <body class="edustream-bg min-h-screen text-slate-900 dark:text-slate-100">
 
     <div class="content-layer min-h-screen">
-        <!-- Navigation -->
         <nav class="border-b border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
             <div class="max-w-5xl mx-auto flex justify-between items-center">
                 <div class="flex items-center gap-2 font-bold text-xl text-emerald-600">
@@ -98,7 +97,7 @@
                     <span>EduStream</span>
                 </div>
                 <div class="flex items-center gap-4">
-                    <a href="dashboard.html" class="text-sm font-medium hover:text-emerald-500 transition-colors">Dashboard</a>
+                    <a href="#" class="text-sm font-medium hover:text-emerald-500 transition-colors">Dashboard</a>
                     <button id="logout-btn" class="text-sm font-medium text-red-500 hover:text-red-600 transition-colors">Logout</button>
                 </div>
             </div>
@@ -107,7 +106,6 @@
         <main class="max-w-3xl mx-auto py-12 px-6">
             <div id="alert-box" class="hidden mb-6 p-4 rounded-lg text-sm shadow-lg"></div>
 
-            <!-- Profile Header -->
             <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-800/50 overflow-hidden mb-8 transition-transform hover:scale-[1.01]">
                 <div class="cover-image-container profile-gradient">
                     <div class="cover-text">EduStream</div>
@@ -130,7 +128,6 @@
                 </div>
             </div>
 
-            <!-- Account Details Form -->
             <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-800/50 p-8">
                 <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
@@ -140,7 +137,6 @@
                 </h2>
                 
                 <form id="profile-form" class="space-y-6">
-                    <!-- HIDDEN UUID FIELD FOR DEBUGGING/TRACKING IF NEEDED -->
                     <input type="hidden" id="user_uuid">
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -231,15 +227,14 @@
                 const { data: { user }, error } = await supabaseClient.auth.getUser();
 
                 if (error || !user) {
-                    window.location.href = 'login.html';
+                    console.warn("Unauthorized access - Redirecting to login (simulated)");
+                    showAlert("Authentication required. Please sign in.");
                     return;
                 }
                 
-                // Store UUID
                 currentUser = user;
                 document.getElementById('user_uuid').value = user.id;
 
-                // 1. Fetch record using the Auth UUID as the primary key 'id'
                 const { data: studentRecord, error: studentError } = await supabaseClient
                     .from('students')
                     .select('*')
@@ -248,14 +243,12 @@
 
                 const metadata = user.user_metadata || {};
                 
-                // 2. Map values
                 const name = studentRecord?.full_name || metadata.full_name || '';
                 const phone = studentRecord?.phone_number || metadata.phone_number || '';
                 const district = studentRecord?.district || metadata.district || '';
                 const address = studentRecord?.address || metadata.address || '';
                 const email = user.email || '';
 
-                // 3. UI Update
                 document.getElementById('display-name').textContent = name || 'EduStream Student';
                 document.getElementById('display-email').textContent = email;
                 document.getElementById('full_name').value = name;
@@ -267,7 +260,6 @@
                 const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'N/A';
                 document.getElementById('last-login').textContent = lastSignIn;
 
-                // 4. Lock if record exists
                 if (studentRecord) {
                     lockForm();
                 }
@@ -297,14 +289,20 @@
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Verify session is still active
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
+            let sessionData;
+            try {
+                const { data } = await supabaseClient.auth.getSession();
+                sessionData = data;
+            } catch (err) {
+                console.error("Session check failed", err);
+            }
+
+            if (!sessionData || !sessionData.session) {
                 showAlert('Session expired. Please log in again.');
                 return;
             }
 
-            const userId = session.user.id; // Get UUID directly from session
+            const userId = sessionData.session.user.id;
             const saveBtn = document.getElementById('save-btn');
             const fullName = document.getElementById('full_name').value.trim();
             const phone = document.getElementById('phone').value.trim();
@@ -320,21 +318,19 @@
             saveBtn.textContent = 'Locking Profile...';
 
             try {
-                // 1. Sync data to 'students' table using the UUID as ID
                 const { error: dbError } = await supabaseClient
                     .from('students')
                     .upsert([{
-                        id: userId, // Explicitly sending the Auth UUID
+                        id: userId,
                         full_name: fullName,
                         phone_number: phone,
                         district: district,
                         address: address,
-                        email: session.user.email
+                        email: sessionData.session.user.email
                     }]);
 
                 if (dbError) throw dbError;
 
-                // 2. Update Auth Metadata for consistency
                 await supabaseClient.auth.updateUser({
                     data: { 
                         full_name: fullName,
@@ -356,10 +352,9 @@
             }
         });
 
-        // Utilities
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await supabaseClient.auth.signOut();
-            window.location.href = 'login.html';
+            showAlert('Logged out successfully.', 'success');
         });
 
         const themeBtn = document.getElementById('theme-toggle');
@@ -378,6 +373,7 @@
 
         function showAlert(msg, type = 'error') {
             const box = document.getElementById('alert-box');
+            if (!box) return;
             box.textContent = msg;
             box.classList.remove('hidden');
             if (type === 'success') {
