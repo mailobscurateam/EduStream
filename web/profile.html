@@ -85,17 +85,6 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
-
-        .skeleton {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
     </style>
 </head>
 <body class="edustream-bg min-h-screen text-slate-900 dark:text-slate-100">
@@ -151,6 +140,9 @@
                 </h2>
                 
                 <form id="profile-form" class="space-y-6">
+                    <!-- HIDDEN UUID FIELD FOR DEBUGGING/TRACKING IF NEEDED -->
+                    <input type="hidden" id="user_uuid">
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
@@ -242,9 +234,12 @@
                     window.location.href = 'login.html';
                     return;
                 }
+                
+                // Store UUID
                 currentUser = user;
+                document.getElementById('user_uuid').value = user.id;
 
-                // 1. Check for existing student record first
+                // 1. Fetch record using the Auth UUID as the primary key 'id'
                 const { data: studentRecord, error: studentError } = await supabaseClient
                     .from('students')
                     .select('*')
@@ -253,14 +248,14 @@
 
                 const metadata = user.user_metadata || {};
                 
-                // 2. Data Mapping
+                // 2. Map values
                 const name = studentRecord?.full_name || metadata.full_name || '';
                 const phone = studentRecord?.phone_number || metadata.phone_number || '';
                 const district = studentRecord?.district || metadata.district || '';
                 const address = studentRecord?.address || metadata.address || '';
                 const email = user.email || '';
 
-                // 3. UI Updates
+                // 3. UI Update
                 document.getElementById('display-name').textContent = name || 'EduStream Student';
                 document.getElementById('display-email').textContent = email;
                 document.getElementById('full_name').value = name;
@@ -272,7 +267,7 @@
                 const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'N/A';
                 document.getElementById('last-login').textContent = lastSignIn;
 
-                // 4. Auto-lock if data exists in the database
+                // 4. Lock if record exists
                 if (studentRecord) {
                     lockForm();
                 }
@@ -301,8 +296,15 @@
 
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return;
+            
+            // Verify session is still active
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                showAlert('Session expired. Please log in again.');
+                return;
+            }
 
+            const userId = session.user.id; // Get UUID directly from session
             const saveBtn = document.getElementById('save-btn');
             const fullName = document.getElementById('full_name').value.trim();
             const phone = document.getElementById('phone').value.trim();
@@ -315,11 +317,25 @@
             }
 
             saveBtn.disabled = true;
-            saveBtn.textContent = 'Syncing...';
+            saveBtn.textContent = 'Locking Profile...';
 
             try {
-                // 1. Update Auth Metadata
-                const { error: authError } = await supabaseClient.auth.updateUser({
+                // 1. Sync data to 'students' table using the UUID as ID
+                const { error: dbError } = await supabaseClient
+                    .from('students')
+                    .upsert([{
+                        id: userId, // Explicitly sending the Auth UUID
+                        full_name: fullName,
+                        phone_number: phone,
+                        district: district,
+                        address: address,
+                        email: session.user.email
+                    }]);
+
+                if (dbError) throw dbError;
+
+                // 2. Update Auth Metadata for consistency
+                await supabaseClient.auth.updateUser({
                     data: { 
                         full_name: fullName,
                         phone_number: phone,
@@ -327,22 +343,8 @@
                         address: address
                     }
                 });
-                if (authError) throw authError;
 
-                // 2. Insert into students table
-                const { error: dbError } = await supabaseClient
-                    .from('students')
-                    .upsert([{
-                        id: currentUser.id,
-                        full_name: fullName,
-                        phone_number: phone,
-                        district: district,
-                        address: address,
-                        email: currentUser.email
-                    }]);
-                if (dbError) throw dbError;
-
-                showAlert('Profile locked successfully!', 'success');
+                showAlert('Profile information saved and locked!', 'success');
                 document.getElementById('display-name').textContent = fullName;
                 lockForm();
 
@@ -354,13 +356,12 @@
             }
         });
 
-        // Logout
+        // Utilities
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await supabaseClient.auth.signOut();
             window.location.href = 'login.html';
         });
 
-        // Theme Toggle
         const themeBtn = document.getElementById('theme-toggle');
         const themeText = document.getElementById('theme-text');
         
