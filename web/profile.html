@@ -235,6 +235,7 @@
                 currentUser = user;
                 document.getElementById('user_uuid').value = user.id;
 
+                // Priority: Fetch data from 'students' table first
                 const { data: studentRecord, error: studentError } = await supabaseClient
                     .from('students')
                     .select('*')
@@ -243,12 +244,14 @@
 
                 const metadata = user.user_metadata || {};
                 
+                // Map fields from studentRecord if it exists, otherwise use auth metadata
                 const name = studentRecord?.full_name || metadata.full_name || '';
                 const phone = studentRecord?.phone_number || metadata.phone_number || '';
                 const district = studentRecord?.district || metadata.district || '';
                 const address = studentRecord?.address || metadata.address || '';
                 const email = user.email || '';
 
+                // Populate UI
                 document.getElementById('display-name').textContent = name || 'EduStream Student';
                 document.getElementById('display-email').textContent = email;
                 document.getElementById('full_name').value = name;
@@ -260,11 +263,8 @@
                 const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'N/A';
                 document.getElementById('last-login').textContent = lastSignIn;
 
-                // Auto-lock if data exists in database (even if empty strings, a record exists)
-                if (studentRecord) {
-                    lockForm();
-                } else if (name && phone && district && address) {
-                    // Fallback: If metadata provided everything but DB record is missing, still lock
+                // AUTO-LOCK LOGIC: Lock the form if a record already exists in the 'students' table
+                if (studentRecord && studentRecord.full_name && studentRecord.phone_number) {
                     lockForm();
                 }
             } catch (err) {
@@ -282,7 +282,6 @@
 
             inputs.forEach(input => {
                 input.disabled = true;
-                // Add a visual indicator of read-only status
                 input.classList.add('cursor-not-allowed', 'opacity-70');
             });
             
@@ -327,6 +326,7 @@
             saveBtn.textContent = 'Locking Profile...';
 
             try {
+                // Upsert into students table
                 const { error: dbError } = await supabaseClient
                     .from('students')
                     .upsert([{
@@ -340,6 +340,7 @@
 
                 if (dbError) throw dbError;
 
+                // Sync with auth metadata for redundancy
                 await supabaseClient.auth.updateUser({
                     data: { 
                         full_name: fullName,
