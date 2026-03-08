@@ -258,4 +258,39 @@
                             </span>
                         </div>
                         <div class="absolute bottom-4 left-4 right-4 flex items-center gap-3">
-                            <img src="${teacher.avatar}" class="w-8 h-
+                            <img src="${teacher.avatar}" class="w-8 h-8 rounded-full border-2 border-white/50 object-cover" alt="${teacher.name}">
+                            <div class="overflow-hidden">
+                                <p class="text-white text-[10px] font-medium opacity-80 leading-none mb-1">Instructor</p>
+                                <h4 class="text-white text-xs font-bold truncate leading-none">${teacher.name}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-2 pb-2 flex flex-col flex-grow">
+                        <h3 class="text-slate-900 dark:text-white font-bold text-base mb-2 line-clamp-1">${c.title}</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs line-clamp-2 leading-relaxed mb-6">
+                            ${c.description}
+                        </p>
+
+                        <div class="mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Tuition</span>
+                                <span class="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                                    ${c.price === 'Free' ? 'Free' : '$' + c.price}
+                                </span>
+                            </div>
+                            <!-- ENROLL LINK: Now points to curriculum.html?id=[Course ID] -->
+                            <a href="curriculum.html?id=${c.id}" 
+                               class="px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all">
+                                Enroll
+                            </a>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        init();
+    </script>
+</body>
+</html>
