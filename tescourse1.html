@@ -15,74 +15,128 @@
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'sans-serif'],
                     },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
                 }
             }
         };
     </script>
     <style>
+        body {
+            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.05), transparent),
+                        radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.05), transparent);
+            background-attachment: fixed;
+        }
+
         .month-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .month-card.active {
-            background-color: #059669;
+            background-color: #16a34a;
             color: white;
-            box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 12px 20px -8px rgba(22, 163, 74, 0.5);
+            transform: scale(1.02);
+        }
+        
+        .lesson-card {
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
         }
         .lesson-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-4px);
+            border-color: #22c55e;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
         }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease forwards;
         }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-300">
 
-    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+    <!-- Premium Navigation -->
+    <header class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="dashboard.html" class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
-                <span class="text-xl font-extrabold text-slate-900 dark:text-white">EduStream</span>
+            <a href="dashboard.html" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-brand-600/20 group-hover:rotate-12 transition-transform">E</div>
+                <span class="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">EduStream</span>
             </a>
-            <div id="course-breadcrumb" class="text-sm font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-1.5 rounded-full">
+            <div id="course-breadcrumb" class="hidden sm:block text-xs font-bold uppercase tracking-widest text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-5 py-2 rounded-full border border-brand-100 dark:border-brand-800/50">
                 Loading Curriculum...
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-6 py-12">
-        <div class="mb-8">
-            <h1 id="course-main-title" class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Curriculum</h1>
-            <p id="course-tagline" class="text-slate-500 dark:text-slate-400 mt-1">Manage your progress through the monthly modules.</p>
+        <!-- Hero Section -->
+        <div class="mb-12">
+            <h1 id="course-main-title" class="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-3">Curriculum</h1>
+            <div class="flex items-center gap-3">
+                <span class="w-12 h-1 bg-brand-500 rounded-full"></span>
+                <p id="course-tagline" class="text-lg text-slate-500 dark:text-slate-400 font-medium tracking-wide">Explore your journey month by month.</p>
+            </div>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-12">
+        <div id="main-content-layout" class="flex flex-col lg:flex-row gap-12">
             
-            <!-- Sidebar Navigation: Months -->
-            <aside class="lg:w-64 flex-shrink-0">
-                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 px-4">Select Month</h2>
-                <div id="month-list" class="flex flex-row lg:flex-col gap-2 overflow-x-auto pb-4 lg:pb-0 no-scrollbar">
-                    <!-- Months will be injected here -->
+            <!-- Sidebar Navigation -->
+            <aside class="lg:w-72 flex-shrink-0">
+                <div class="sticky top-32">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 px-4">Timeline</h2>
+                    <div id="month-list" class="flex flex-row lg:flex-col gap-3 overflow-x-auto pb-6 lg:pb-0 no-scrollbar">
+                        <!-- Months injected here -->
+                    </div>
                 </div>
             </aside>
 
-            <!-- Lesson Content Area -->
+            <!-- Content Area -->
             <div class="flex-grow">
-                <div class="mb-10">
-                    <h2 id="current-month-title" class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Select a month</h2>
-                    <p class="text-slate-500 dark:text-slate-400">Lessons and materials assigned for this period.</p>
-                </div>
-
-                <div id="lesson-grid" class="grid grid-cols-1 gap-4">
-                    <div class="col-span-full py-20 text-center text-slate-400">
-                        <svg class="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <p>Loading your curriculum...</p>
+                <div class="flex items-end justify-between mb-8 pb-4 border-b border-slate-200 dark:border-slate-800">
+                    <div>
+                        <h2 id="current-month-title" class="text-3xl font-bold text-slate-900 dark:text-white">Select a month</h2>
+                        <p class="text-slate-500 dark:text-slate-400 mt-1">Found <span id="lesson-count" class="text-brand-600 font-bold">0</span> modules</p>
                     </div>
                 </div>
+
+                <div id="lesson-grid" class="grid grid-cols-1 gap-5">
+                    <!-- Lessons injected here -->
+                    <div class="py-20 text-center">
+                        <div class="animate-pulse space-y-4">
+                            <div class="h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl w-full"></div>
+                            <div class="h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl w-3/4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error View -->
+        <div id="error-view" class="hidden py-12 animate-fade-in">
+            <div class="max-w-xl mx-auto bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none text-center">
+                <div class="w-20 h-20 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-8 rotate-3">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-4">Content Not Available</h2>
+                <p class="text-slate-500 dark:text-slate-400 mb-10 text-lg leading-relaxed">We couldn't locate the curriculum associated with this ID. Please double-check your link or head back to the main portal.</p>
+                <a href="dashboard.html" class="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl hover:bg-brand-600 dark:hover:bg-brand-500 transition-all shadow-xl shadow-slate-900/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Back to Dashboard
+                </a>
             </div>
         </div>
     </main>
@@ -102,18 +156,20 @@
         let filteredLessons = [];
         let selectedMonth = null;
         
-        // Get the ID from the URL parameter (?id=...)
         const urlParams = new URLSearchParams(window.location.search);
         const targetCourseId = urlParams.get('id');
 
+        function showError() {
+            document.getElementById('main-content-layout').classList.add('hidden');
+            document.getElementById('error-view').classList.remove('hidden');
+            document.getElementById('course-breadcrumb').classList.add('hidden');
+            document.getElementById('course-main-title').innerText = "Oops!";
+        }
+
         async function fetchCourseInfo() {
-            if (!targetCourseId) {
-                document.getElementById('course-breadcrumb').innerText = "All Lessons";
-                return;
-            }
+            if (!targetCourseId) { showError(); return; }
 
             try {
-                // Fetch from Sheet2 to verify course name if needed
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:B?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const response = await fetch(url);
                 const data = await response.json();
@@ -132,35 +188,26 @@
         }
 
         async function fetchLessons() {
+            if (!targetCourseId) return;
+
             try {
-                // Fetch from Sheet3, Columns A to H
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet3!A:H?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const response = await fetch(url);
                 const data = await response.json();
 
                 if (data.values) {
-                    // 1. Map all data
                     allLessons = data.values.slice(1).map(row => ({
-                        id: row[0], // ID from Column A
+                        id: row[0],
                         title: row[1] || 'Untitled Lesson',
                         description: row[2] || 'No description available.',
                         linkBase: row[5] || 'lesson.html',
                         monthNum: parseInt(row[7]) || 1
                     }));
 
-                    // 2. Filter lessons to ONLY show those matching the ID from the URL
-                    // Assuming column A in Sheet3 relates to the Course ID or the specific lesson identifier provided in the URL
-                    if (targetCourseId) {
-                        filteredLessons = allLessons.filter(l => l.id === targetCourseId);
-                    } else {
-                        filteredLessons = allLessons;
-                    }
+                    filteredLessons = allLessons.filter(l => l.id === targetCourseId);
 
                     if (filteredLessons.length === 0) {
-                        document.getElementById('lesson-grid').innerHTML = `
-                            <div class="col-span-full py-20 text-center text-slate-400">
-                                No lessons found for ID: ${targetCourseId}
-                            </div>`;
+                        showError();
                         return;
                     }
 
@@ -168,33 +215,29 @@
                 }
             } catch (error) {
                 console.error("Error loading lessons:", error);
-                document.getElementById('lesson-grid').innerHTML = `<div class="col-span-full text-center text-red-500">Failed to load lesson data.</div>`;
+                document.getElementById('lesson-grid').innerHTML = `<div class="col-span-full text-center text-red-500">Connection failed. Please refresh.</div>`;
             }
         }
 
         function renderMonthSidebar() {
             const container = document.getElementById('month-list');
-            // Unique months from the filtered subset
             const availableMonths = [...new Set(filteredLessons.map(l => l.monthNum))].sort((a, b) => a - b);
             
-            if (availableMonths.length === 0) {
-                container.innerHTML = `<p class="px-4 text-xs text-slate-400">No data available.</p>`;
-                return;
-            }
+            if (availableMonths.length === 0) { showError(); return; }
 
             container.innerHTML = availableMonths.map(m => `
-                <button onclick="selectMonth(${m})" id="btn-month-${m}" class="month-card whitespace-nowrap px-6 py-3 rounded-2xl text-left font-bold text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500 transition-all">
+                <button onclick="selectMonth(${m})" id="btn-month-${m}" class="month-card whitespace-nowrap px-6 py-4 rounded-2xl text-left font-bold text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-500 transition-all">
+                    <span class="block text-[10px] opacity-50 uppercase mb-0.5">Month ${m}</span>
                     ${MONTH_NAMES[m-1]}
                 </button>
             `).join('');
 
-            // Auto-select the first available month for this specific ID
             selectMonth(availableMonths[0]);
         }
 
         function selectMonth(m) {
             selectedMonth = m;
-            document.getElementById('current-month-title').innerText = `${MONTH_NAMES[m-1]} Lessons`;
+            document.getElementById('current-month-title').innerText = `${MONTH_NAMES[m-1]} Modules`;
             
             document.querySelectorAll('.month-card').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-month-${m}`);
@@ -205,33 +248,35 @@
 
         function renderLessons() {
             const grid = document.getElementById('lesson-grid');
-            // Filter the already filtered list by the selected month
             const finalDisplayList = filteredLessons.filter(l => l.monthNum === selectedMonth);
+            document.getElementById('lesson-count').innerText = finalDisplayList.length;
 
             if (finalDisplayList.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">No lessons scheduled for this month.</div>`;
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400 font-medium">No active modules for this month.</div>`;
                 return;
             }
 
-            grid.innerHTML = finalDisplayList.map(l => {
+            grid.innerHTML = finalDisplayList.map((l, index) => {
                 const finalLink = l.linkBase.includes('?') 
                     ? `${l.linkBase}&id=${l.id}` 
                     : `${l.linkBase}?id=${l.id}`;
 
                 return `
-                <a href="${finalLink}" class="lesson-card group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex justify-between items-center shadow-sm hover:shadow-md hover:border-emerald-500 transition-all duration-300">
-                    <div class="flex-grow pr-4">
-                        <h3 class="font-bold text-slate-900 dark:text-white text-lg mb-1 group-hover:text-emerald-600 transition-colors">${l.title}</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">${l.description}</p>
+                <a href="${finalLink}" class="lesson-card group bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800/50 rounded-[2rem] p-8 flex justify-between items-center animate-fade-in" style="animation-delay: ${index * 0.1}s">
+                    <div class="flex-grow pr-8">
+                        <div class="flex items-center gap-3 mb-3">
+                             <div class="px-3 py-1 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-brand-100 dark:border-brand-800/50">Module ${index + 1}</div>
+                        </div>
+                        <h3 class="font-extrabold text-slate-900 dark:text-white text-xl mb-2 group-hover:text-brand-600 transition-colors">${l.title}</h3>
+                        <p class="text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">${l.description}</p>
                     </div>
-                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-brand-600 group-hover:text-white group-hover:shadow-xl group-hover:shadow-brand-600/30 transition-all duration-300">
+                        <svg class="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7-7 7M3 12h18"/></svg>
                     </div>
                 </a>`;
             }).join('');
         }
 
-        // Run
         fetchCourseInfo();
         fetchLessons();
     </script>
