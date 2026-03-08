@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore Courses | EduStream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                }
+            }
+        };
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <style>
+        .course-card {
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .course-card:hover {
+            transform: translateY(-8px);
+        }
+        .filter-chip.active {
+            background-color: #059669;
+            color: white;
+            border-color: #059669;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-300">
+
+    <!-- Navbar -->
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-10">
+                <a href="dashboard.html" class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-black text-xl">E</span>
+                    </div>
+                    <span class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">EduStream</span>
+                </a>
+                <nav class="hidden md:flex gap-8 text-sm font-semibold">
+                    <a href="dashboard.html" class="text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-500 transition-colors">Dashboard</a>
+                    <a href="course.html" class="text-emerald-600 dark:text-emerald-400 relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-emerald-600">Courses</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button id="theme-toggle" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
+                    <svg id="sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+                    <svg id="moon-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+                <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2"></div>
+                <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden ring-2 ring-emerald-500/20">
+                    <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-emerald-600 dark:text-emerald-500 font-bold tracking-widest text-xs uppercase">Learning Hub</span>
+                    <div id="view-mode-indicator" class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase hidden">Teacher Mode</div>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                    Explore <span class="text-emerald-600">Courses</span>
+                </h1>
+                <p id="view-description" class="text-slate-500 dark:text-slate-400 max-w-xl text-lg">Browse our catalog or manage your own curriculum.</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-4">
+                <div class="relative flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full sm:w-auto overflow-hidden">
+                    <input type="text" id="search-input" placeholder="Search courses..." class="pl-12 pr-4 py-3 bg-transparent text-sm font-medium focus:outline-none w-full sm:w-64 dark:text-white" />
+                    <svg class="absolute left-4 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+
+                <button id="view-toggle" class="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-emerald-500/10 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    <span id="toggle-text">Switch to Teacher View</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-10" id="category-filters">
+            <button class="filter-chip active px-5 py-2 rounded-full border border-slate-200 dark:border-slate-800 text-sm font-semibold transition-all hover:border-emerald-500 dark:text-slate-300" data-category="all">All Courses</button>
+        </div>
+
+        <div id="course-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Content Injected via Script -->
+            <div class="animate-pulse bg-white dark:bg-slate-900 h-96 rounded-3xl"></div>
+            <div class="animate-pulse bg-white dark:bg-slate-900 h-96 rounded-3xl"></div>
+            <div class="animate-pulse bg-white dark:bg-slate-900 h-96 rounded-3xl"></div>
+            <div class="animate-pulse bg-white dark:bg-slate-900 h-96 rounded-3xl"></div>
+        </div>
+    </main>
+
+    <script>
+        const CONFIG = {
+            SUPABASE_URL: 'https://pkqpvnrtxtqlngwtfnhy.supabase.co',
+            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0',
+            GOOGLE_SHEETS_API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM',
+            SPREADSHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM'
+        };
+
+        const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        
+        let allCourses = [];
+        let allTeachers = {}; // Dictionary mapped by TeacherID
+        let currentUserId = null;
+        let isTeacherView = false;
+        let activeCategory = 'all';
+        let searchQuery = '';
+
+        // UI Element Selectors
+        const viewToggleBtn = document.getElementById('view-toggle');
+        const toggleText = document.getElementById('toggle-text');
+        const viewIndicator = document.getElementById('view-mode-indicator');
+        const viewDescription = document.getElementById('view-description');
+
+        // Theme Logic
+        document.getElementById('theme-toggle').onclick = () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateIcons();
+        };
+
+        const updateIcons = () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('sun-icon').classList.toggle('hidden', !isDark);
+            document.getElementById('moon-icon').classList.toggle('hidden', isDark);
+        };
+        updateIcons();
+
+        viewToggleBtn.onclick = () => {
+            isTeacherView = !isTeacherView;
+            toggleText.innerText = isTeacherView ? 'Switch to Student View' : 'Switch to Teacher View';
+            viewIndicator.classList.toggle('hidden', !isTeacherView);
+            viewDescription.innerText = isTeacherView ? "Managing your published content and tracking student engagement." : "Browse our catalog or manage your own curriculum.";
+            
+            if(isTeacherView) {
+                viewToggleBtn.classList.replace('bg-slate-900', 'bg-slate-700');
+            } else {
+                viewToggleBtn.classList.replace('bg-slate-700', 'bg-slate-900');
+            }
+            renderCourses();
+        };
+
+        document.getElementById('search-input').oninput = (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            renderCourses();
+        };
+
+        async function init() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return window.location.assign('login.html');
+            currentUserId = session.user.id;
+            
+            try {
+                // 1. Fetch Teacher Metadata from "Teachers" Sheet
+                const teacherUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Teachers!A:E?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
+                const teacherRes = await fetch(teacherUrl);
+                const teacherData = await teacherRes.json();
+                
+                if (teacherData && teacherData.values) {
+                    // Map teachers into an object for fast lookup: { "ID": { name, bio, avatar } }
+                    teacherData.values.slice(1).forEach(row => {
+                        allTeachers[row[0]] = {
+                            id: row[0],
+                            name: row[1] || 'Unknown Teacher',
+                            bio: row[2] || 'Professional Educator',
+                            avatar: row[3] || `https://api.dicebear.com/7.x/initials/svg?seed=${row[1]}`,
+                            specialty: row[4] || 'General'
+                        };
+                    });
+                }
+
+                // 2. Fetch Courses from "Sheet2"
+                // Column Map updated based on your request:
+                // 0:ID, 1:Title, 2:Desc, 3:Image, 4:TeacherID (COL E), 5:Price, 6:Category (Assume G)
+                const courseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:G?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
+                const courseRes = await fetch(courseUrl);
+                const courseData = await courseRes.json();
+                
+                if (courseData && courseData.values) {
+                    allCourses = courseData.values.slice(1).map(row => ({
+                        id: row[0] || '',
+                        title: row[1] || 'Untitled Course',
+                        description: row[2] || 'Comprehensive training program.',
+                        image: row[3] || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800',
+                        teacherId: row[4] || '', // COL E
+                        price: row[5] || 'Free',
+                        category: row[6] || 'General'
+                    }));
+
+                    setupCategories();
+                    renderCourses();
+                }
+            } catch (error) {
+                console.error("Data Fetching Error:", error);
+                document.getElementById('course-grid').innerHTML = `<div class="col-span-full py-20 text-center opacity-50 text-slate-500">Could not load library data.</div>`;
+            }
+        }
+
+        function setupCategories() {
+            const filterContainer = document.getElementById('category-filters');
+            const categories = [...new Set(allCourses.map(c => c.category))];
+            
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-chip px-5 py-2 rounded-full border border-slate-200 dark:border-slate-800 text-sm font-semibold transition-all hover:border-emerald-500 dark:text-slate-300';
+                btn.innerText = cat;
+                btn.onclick = () => {
+                    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    activeCategory = cat;
+                    renderCourses();
+                };
+                filterContainer.appendChild(btn);
+            });
+
+            filterContainer.querySelector('[data-category="all"]').onclick = (e) => {
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                activeCategory = 'all';
+                renderCourses();
+            };
+        }
+
+        function renderCourses() {
+            const grid = document.getElementById('course-grid');
+            let filtered = allCourses;
+
+            // Teacher View Filter: Match course's teacherId (Col E) with logged in user's ID
+            if (isTeacherView) {
+                filtered = filtered.filter(c => c.teacherId === currentUserId);
+            }
+
+            if (activeCategory !== 'all') {
+                filtered = filtered.filter(c => c.category === activeCategory);
+            }
+
+            if (searchQuery) {
+                filtered = filtered.filter(c => 
+                    c.title.toLowerCase().includes(searchQuery) || 
+                    c.description.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-32 text-center text-slate-500 font-medium">No results found for your criteria.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(c => {
+                const teacher = allTeachers[c.teacherId] || { name: 'Faculty Member', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Staff' };
+                
+                return `
+                <div class="course-card group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-3 flex flex-col shadow-xl shadow-slate-200/40 dark:shadow-none hover:border-emerald-500 transition-colors">
+                    <div class="relative h-48 w-full rounded-[2rem] overflow-hidden mb-4">
+                        <img src="${c.image}" alt="${c.title}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                        <div class="absolute top-3 left-3">
+                            <span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm text-slate-900 text-[9px] font-bold uppercase tracking-widest shadow-lg">
+                                ${c.category}
+                            </span>
+                        </div>
+                        <div class="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+                            <img src="${teacher.avatar}" class="w-8 h-8 rounded-full border-2 border-white/50 object-cover" alt="${teacher.name}">
+                            <div class="overflow-hidden">
+                                <p class="text-white text-[10px] font-medium opacity-80 leading-none mb-1">Instructor</p>
+                                <h4 class="text-white text-xs font-bold truncate leading-none">${teacher.name}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-2 pb-2 flex flex-col flex-grow">
+                        <h3 class="text-slate-900 dark:text-white font-bold text-base mb-2 line-clamp-1">${c.title}</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs line-clamp-2 leading-relaxed mb-6">
+                            ${c.description}
+                        </p>
+
+                        <div class="mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Tuition</span>
+                                <span class="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                                    ${c.price === 'Free' ? 'Free' : '$' + c.price}
+                                </span>
+                            </div>
+                            <a href="${isTeacherView ? 'manage-course.html?id=' + c.id : 'singlecourse.html?id=' + c.id}" 
+                               class="px-5 py-2.5 ${isTeacherView ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'bg-emerald-600 text-white'} hover:bg-emerald-700 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all">
+                                ${isTeacherView ? 'Manage' : 'Enroll'}
+                            </a>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        init();
+    </script>
+</body>
+</html>
