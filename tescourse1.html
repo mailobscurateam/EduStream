@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,18 +27,31 @@
                 }
             }
         };
-        // Initial theme check
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+
+        // Theme management script
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            localStorage.setItem('theme', theme);
+        };
+
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        applyTheme(savedTheme);
     </script>
     <style>
         body {
-            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.05), transparent),
-                        radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.05), transparent);
+            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent),
+                        radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.08), transparent);
             background-attachment: fixed;
+        }
+
+        .dark body {
+            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent),
+                        radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.1), transparent),
+                        #020617;
         }
 
         .month-card {
@@ -53,13 +66,12 @@
         }
         
         .lesson-card {
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .lesson-card:hover {
             transform: translateY(-4px);
             border-color: #22c55e;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -74,29 +86,35 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-500 text-slate-900 dark:text-slate-100">
 
     <!-- Premium Navigation -->
-    <header class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 sticky top-0 z-50">
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-8">
                 <a href="dashboard.html" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-brand-600/20 group-hover:rotate-12 transition-transform">E</div>
+                    <div class="w-11 h-11 bg-brand-600 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg shadow-brand-600/20 group-hover:rotate-12 transition-transform">E</div>
                     <span class="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">EduStream</span>
                 </a>
-                <div id="course-breadcrumb" class="hidden md:block text-xs font-bold uppercase tracking-widest text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-5 py-2 rounded-full border border-brand-100 dark:border-brand-800/50">
-                    Verifying Session...
+                <div id="course-breadcrumb" class="hidden md:block text-[10px] font-bold uppercase tracking-widest text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-5 py-2.5 rounded-full border border-brand-100 dark:border-brand-800/50">
+                    Verifying...
                 </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <div id="user-profile" class="hidden sm:flex items-center gap-3 pr-4 border-r border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2 sm:gap-6">
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 border border-slate-200 dark:border-slate-700 transition-all">
+                    <svg id="theme-icon-dark" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m3.343-5.657l-.707.707m12.728 12.728l-.707.707M6.343 17.657l-.707-.707M17.657 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                </button>
+
+                <div id="user-profile" class="hidden sm:flex items-center gap-3 pr-6 border-r border-slate-200 dark:border-slate-800">
                     <div class="text-right">
-                        <p id="user-email" class="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[150px]">Loading...</p>
-                        <p class="text-[10px] text-slate-500 uppercase tracking-tighter">Student Account</p>
+                        <p id="user-email" class="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[150px]">...</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-tighter">Student</p>
                     </div>
-                    <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 overflow-hidden">
-                        <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="w-full h-full object-cover">
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 overflow-hidden shadow-inner">
+                        <img id="user-avatar" src="" alt="" class="w-full h-full object-cover">
                     </div>
                 </div>
                 <button onclick="handleLogout()" class="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors uppercase tracking-widest">Logout</button>
@@ -104,13 +122,13 @@
         </div>
     </header>
 
-    <main id="app-container" class="max-w-7xl mx-auto px-6 py-12 opacity-0 transition-opacity duration-500">
+    <main id="app-container" class="max-w-7xl mx-auto px-6 py-12 opacity-0 transition-opacity duration-700">
         <!-- Hero Section -->
-        <div class="mb-12">
-            <h1 id="course-main-title" class="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-3">Curriculum</h1>
-            <div class="flex items-center gap-3">
-                <span class="w-12 h-1 bg-brand-500 rounded-full"></span>
-                <p id="course-tagline" class="text-lg text-slate-500 dark:text-slate-400 font-medium tracking-wide">Explore your journey month by month.</p>
+        <div class="mb-14 relative">
+            <h1 id="course-main-title" class="text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Curriculum</h1>
+            <div class="flex items-center gap-4">
+                <span class="w-16 h-1.5 bg-brand-500 rounded-full"></span>
+                <p id="course-tagline" class="text-lg text-slate-500 dark:text-slate-400 font-medium">Explore your learning path month by month.</p>
             </div>
         </div>
 
@@ -119,7 +137,10 @@
             <!-- Sidebar Navigation -->
             <aside class="lg:w-72 flex-shrink-0">
                 <div class="sticky top-32">
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 px-4">Timeline</h2>
+                    <div class="flex items-center justify-between mb-6 px-4">
+                        <h2 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Timeline</h2>
+                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                    </div>
                     <div id="month-list" class="flex flex-row lg:flex-col gap-3 overflow-x-auto pb-6 lg:pb-0 no-scrollbar">
                         <!-- Months injected here -->
                     </div>
@@ -128,19 +149,19 @@
 
             <!-- Content Area -->
             <div class="flex-grow">
-                <div class="flex items-end justify-between mb-8 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-end justify-between mb-10 pb-6 border-b border-slate-200 dark:border-slate-800">
                     <div>
-                        <h2 id="current-month-title" class="text-3xl font-bold text-slate-900 dark:text-white">Select a month</h2>
-                        <p class="text-slate-500 dark:text-slate-400 mt-1">Found <span id="lesson-count" class="text-brand-600 font-bold">0</span> modules</p>
+                        <h2 id="current-month-title" class="text-3xl font-extrabold text-slate-900 dark:text-white">Curriculum Overview</h2>
+                        <p class="text-slate-500 dark:text-slate-400 mt-2 font-medium">Unlocked <span id="lesson-count" class="text-brand-600 dark:text-brand-400 font-bold">0</span> educational modules</p>
                     </div>
                 </div>
 
-                <div id="lesson-grid" class="grid grid-cols-1 gap-5">
+                <div id="lesson-grid" class="grid grid-cols-1 gap-6">
                     <!-- Lessons injected here -->
                     <div class="py-20 text-center">
-                        <div class="animate-pulse space-y-4">
-                            <div class="h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl w-full"></div>
-                            <div class="h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl w-3/4"></div>
+                        <div class="animate-pulse space-y-6">
+                            <div class="h-24 bg-slate-200 dark:bg-slate-800 rounded-[2rem] w-full"></div>
+                            <div class="h-24 bg-slate-200 dark:bg-slate-800 rounded-[2rem] w-full opacity-60"></div>
                         </div>
                     </div>
                 </div>
@@ -149,15 +170,15 @@
 
         <!-- Error View -->
         <div id="error-view" class="hidden py-12 animate-fade-in">
-            <div class="max-w-xl mx-auto bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none text-center">
-                <div class="w-20 h-20 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-8 rotate-3">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <div class="max-w-xl mx-auto bg-white dark:bg-slate-900 p-12 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none text-center">
+                <div class="w-24 h-24 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-10 rotate-3">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
-                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-4">Content Not Available</h2>
-                <p class="text-slate-500 dark:text-slate-400 mb-10 text-lg leading-relaxed">We couldn't locate the curriculum associated with this ID. Please double-check your link or head back to the main portal.</p>
-                <a href="dashboard.html" class="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl hover:bg-brand-600 dark:hover:bg-brand-500 transition-all shadow-xl shadow-slate-900/10">
+                <h2 class="text-3xl font-black text-slate-900 dark:text-white mb-4">Curriculum Not Found</h2>
+                <p class="text-slate-500 dark:text-slate-400 mb-10 text-lg leading-relaxed">The curriculum you're looking for might have been moved or doesn't exist. Please return to the dashboard.</p>
+                <a href="dashboard.html" class="inline-flex items-center gap-3 px-10 py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20 dark:shadow-white/10">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    Back to Dashboard
+                    Go Back Home
                 </a>
             </div>
         </div>
@@ -165,46 +186,41 @@
 
     <script>
         const CONFIG = {
-            // Supabase Config (Matching your Explore Courses page)
             SUPABASE_URL: 'https://pkqpvnrtxtqlngwtfnhy.supabase.co',
             SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0',
-            
-            // Google Sheets Config
             GOOGLE_SHEETS_API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM',
             SPREADSHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM',
         };
 
-        // Initialize Supabase
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-
-        const MONTH_NAMES = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ];
-
+        const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
         let allLessons = [];
         let filteredLessons = [];
         let selectedMonth = null;
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetCourseId = urlParams.get('id');
+        const targetCourseId = new URLSearchParams(window.location.search).get('id');
 
-        // --- AUTH LOGIC ---
-        // Exactly the same logic as Explore Courses: Check session and redirect if missing
+        // --- Theme Toggle Logic ---
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            applyTheme(isDark ? 'light' : 'dark');
+            updateThemeIcons();
+        }
+
+        function updateThemeIcons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-icon-dark').classList.toggle('hidden', isDark);
+            document.getElementById('theme-icon-light').classList.toggle('hidden', !isDark);
+        }
+
+        // --- Auth & Lifecycle ---
         async function checkAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            
-            if (!session) {
-                // Not logged in -> Redirect to login
-                return window.location.assign('login.html');
-            }
+            if (!session) return window.location.assign('login.html');
 
-            // User is logged in, update UI
             document.getElementById('user-email').innerText = session.user.email;
             document.getElementById('user-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.id}`;
             document.getElementById('app-container').classList.remove('opacity-0');
-            
-            // Start loading page data
             startApp();
         }
 
@@ -213,7 +229,98 @@
             window.location.assign('login.html');
         }
 
-        // --- DATA LOGIC ---
+        // --- Content Logic ---
+        async function startApp() {
+            updateThemeIcons();
+            fetchCourseInfo();
+            fetchLessons();
+        }
+
+        async function fetchCourseInfo() {
+            if (!targetCourseId) return showError();
+            try {
+                const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:B?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`);
+                const data = await response.json();
+                if (data.values) {
+                    const course = data.values.find(row => row[0] === targetCourseId);
+                    if (course) {
+                        document.getElementById('course-breadcrumb').innerText = course[1];
+                        document.getElementById('course-main-title').innerText = course[1];
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function fetchLessons() {
+            if (!targetCourseId) return;
+            try {
+                const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet3!A:H?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`);
+                const data = await response.json();
+                if (data.values) {
+                    allLessons = data.values.slice(1).map(row => ({
+                        courseId: row[0],
+                        title: row[1] || 'Untitled Module',
+                        description: row[2] || 'No description available.',
+                        linkBase: row[5] || 'lesson.html',
+                        monthNum: parseInt(row[7]) || 1
+                    }));
+                    filteredLessons = allLessons.filter(l => l.courseId === targetCourseId);
+                    if (filteredLessons.length === 0) return showError();
+                    renderMonthSidebar();
+                }
+            } catch (e) { showError(); }
+        }
+
+        function renderMonthSidebar() {
+            const container = document.getElementById('month-list');
+            const availableMonths = [...new Set(filteredLessons.map(l => l.monthNum))].sort((a, b) => a - b);
+            if (availableMonths.length === 0) return showError();
+
+            container.innerHTML = availableMonths.map(m => `
+                <button onclick="selectMonth(${m})" id="btn-month-${m}" class="month-card whitespace-nowrap px-6 py-4 rounded-2xl text-left font-bold text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-all">
+                    <span class="block text-[10px] opacity-50 uppercase mb-0.5 tracking-wider">Month ${m}</span>
+                    ${MONTH_NAMES[m-1] || 'Month ' + m}
+                </button>
+            `).join('');
+            selectMonth(availableMonths[0]);
+        }
+
+        function selectMonth(m) {
+            selectedMonth = m;
+            document.getElementById('current-month-title').innerText = `${MONTH_NAMES[m-1] || 'Month ' + m} Modules`;
+            document.querySelectorAll('.month-card').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-month-${m}`)?.classList.add('active');
+            renderLessons();
+        }
+
+        function renderLessons() {
+            const grid = document.getElementById('lesson-grid');
+            const list = filteredLessons.filter(l => l.monthNum === selectedMonth);
+            document.getElementById('lesson-count').innerText = list.length;
+
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="py-20 text-center text-slate-400 font-medium">No active modules for this month yet.</div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map((l, i) => {
+                const link = l.linkBase.includes('?') ? `${l.linkBase}&id=${targetCourseId}` : `${l.linkBase}?id=${targetCourseId}`;
+                return `
+                <a href="${link}" class="lesson-card group bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 rounded-[2.5rem] p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center animate-fade-in" style="animation-delay: ${i * 0.05}s">
+                    <div class="flex-grow pr-0 sm:pr-8 mb-6 sm:mb-0">
+                        <div class="inline-flex items-center gap-2 mb-4 px-3 py-1 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 text-[10px] font-black uppercase tracking-[0.15em] rounded-lg border border-brand-100 dark:border-brand-800/40">
+                            Module ${i + 1}
+                        </div>
+                        <h3 class="font-bold text-slate-900 dark:text-white text-2xl mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">${l.title}</h3>
+                        <p class="text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl text-sm sm:text-base">${l.description}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-600 transition-all duration-300">
+                        <svg class="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7-7 7M3 12h18"/></svg>
+                    </div>
+                </a>`;
+            }).join('');
+        }
+
         function showError() {
             document.getElementById('main-content-layout').classList.add('hidden');
             document.getElementById('error-view').classList.remove('hidden');
@@ -221,125 +328,6 @@
             document.getElementById('course-main-title').innerText = "Oops!";
         }
 
-        async function fetchCourseInfo() {
-            if (!targetCourseId) { showError(); return; }
-
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:B?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.values) {
-                    const course = data.values.find(row => row[0] === targetCourseId);
-                    if (course) {
-                        const courseName = course[1];
-                        document.getElementById('course-breadcrumb').innerText = courseName;
-                        document.getElementById('course-main-title').innerText = courseName;
-                    }
-                }
-            } catch (error) {
-                console.error("Error loading course info:", error);
-            }
-        }
-
-        async function fetchLessons() {
-            if (!targetCourseId) return;
-
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet3!A:H?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.values) {
-                    allLessons = data.values.slice(1).map(row => ({
-                        courseId: row[0],
-                        title: row[1] || 'Untitled Lesson',
-                        description: row[2] || 'No description available.',
-                        linkBase: row[5] || 'lesson.html',
-                        monthNum: parseInt(row[7]) || 1
-                    }));
-
-                    // Filter by the course ID passed in URL
-                    filteredLessons = allLessons.filter(l => l.courseId === targetCourseId);
-
-                    if (filteredLessons.length === 0) {
-                        showError();
-                        return;
-                    }
-
-                    renderMonthSidebar();
-                }
-            } catch (error) {
-                console.error("Error loading lessons:", error);
-                document.getElementById('lesson-grid').innerHTML = `<div class="col-span-full text-center text-red-500 py-10">Connection failed. Please refresh the page.</div>`;
-            }
-        }
-
-        function renderMonthSidebar() {
-            const container = document.getElementById('month-list');
-            const availableMonths = [...new Set(filteredLessons.map(l => l.monthNum))].sort((a, b) => a - b);
-            
-            if (availableMonths.length === 0) { showError(); return; }
-
-            container.innerHTML = availableMonths.map(m => `
-                <button onclick="selectMonth(${m})" id="btn-month-${m}" class="month-card whitespace-nowrap px-6 py-4 rounded-2xl text-left font-bold text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-500 transition-all">
-                    <span class="block text-[10px] opacity-50 uppercase mb-0.5">Month ${m}</span>
-                    ${MONTH_NAMES[m-1] || 'Month ' + m}
-                </button>
-            `).join('');
-
-            selectMonth(availableMonths[0]);
-        }
-
-        function selectMonth(m) {
-            selectedMonth = m;
-            document.getElementById('current-month-title').innerText = `${MONTH_NAMES[m-1] || 'Month ' + m} Modules`;
-            
-            document.querySelectorAll('.month-card').forEach(btn => btn.classList.remove('active'));
-            const activeBtn = document.getElementById(`btn-month-${m}`);
-            if (activeBtn) activeBtn.classList.add('active');
-
-            renderLessons();
-        }
-
-        function renderLessons() {
-            const grid = document.getElementById('lesson-grid');
-            const finalDisplayList = filteredLessons.filter(l => l.monthNum === selectedMonth);
-            document.getElementById('lesson-count').innerText = finalDisplayList.length;
-
-            if (finalDisplayList.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400 font-medium">No active modules for this month.</div>`;
-                return;
-            }
-
-            grid.innerHTML = finalDisplayList.map((l, index) => {
-                const finalLink = l.linkBase.includes('?') 
-                    ? `${l.linkBase}&id=${targetCourseId}` 
-                    : `${l.linkBase}?id=${targetCourseId}`;
-
-                return `
-                <a href="${finalLink}" class="lesson-card group bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800/50 rounded-[2rem] p-8 flex justify-between items-center animate-fade-in" style="animation-delay: ${index * 0.1}s">
-                    <div class="flex-grow pr-8">
-                        <div class="flex items-center gap-3 mb-3">
-                             <div class="px-3 py-1 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-brand-100 dark:border-brand-800/50">Module ${index + 1}</div>
-                        </div>
-                        <h3 class="font-extrabold text-slate-900 dark:text-white text-xl mb-2 group-hover:text-brand-600 transition-colors">${l.title}</h3>
-                        <p class="text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">${l.description}</p>
-                    </div>
-                    <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-brand-600 group-hover:text-white group-hover:shadow-xl group-hover:shadow-brand-600/30 transition-all duration-300">
-                        <svg class="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7-7 7M3 12h18"/></svg>
-                    </div>
-                </a>`;
-            }).join('');
-        }
-
-        // Initialize App Flow
-        function startApp() {
-            fetchCourseInfo();
-            fetchLessons();
-        }
-
-        // Call auth check immediately on load
         checkAuth();
     </script>
 </body>
