@@ -46,19 +46,17 @@
             height: 100%;
             z-index: 1;
         }
-        /* Invisible overlay to block YouTube native interaction */
         .video-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: calc(100% - 60px); /* Leave room for controls if needed, but we overlay them too */
+            height: calc(100% - 60px);
             z-index: 10;
             background: transparent;
             cursor: default;
         }
         
-        /* Custom Controls Bar */
         .custom-controls {
             position: absolute;
             bottom: 0;
@@ -77,7 +75,6 @@
             opacity: 1;
         }
 
-        /* Progress Bar Styling */
         .progress-container {
             width: 100%;
             height: 4px;
@@ -95,7 +92,6 @@
             position: relative;
         }
 
-        /* Protection Watermark */
         #watermark {
             position: absolute;
             z-index: 20;
@@ -138,29 +134,21 @@
     <main class="max-w-5xl mx-auto px-6 py-12 animate-fade-in">
         <div id="player-wrapper" class="video-container group">
             <div id="youtube-player"></div>
-            
-            <!-- Blocking Interaction Overlay -->
             <div class="video-overlay" id="player-shield"></div>
-            
-            <!-- Protection Watermark -->
             <div id="watermark">User ID Tracking...</div>
 
-            <!-- Custom Controls -->
             <div class="custom-controls">
-                <!-- Progress Scrubber -->
                 <div class="progress-container" id="progress-container" onclick="seek(event)">
                     <div class="progress-bar" id="progress-bar"></div>
                 </div>
 
                 <div class="flex items-center justify-between text-white">
                     <div class="flex items-center gap-4">
-                        <!-- Play/Pause -->
                         <button onclick="togglePlay()" class="hover:text-brand-500 transition-colors">
                             <svg id="ctrl-play-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                             <svg id="ctrl-pause-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                         </button>
 
-                        <!-- Volume -->
                         <div class="flex items-center gap-2 group/vol">
                             <button onclick="toggleMute()" class="hover:text-brand-500 transition-colors">
                                 <svg id="vol-high" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
@@ -168,21 +156,16 @@
                             </button>
                             <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="setVolume(this.value)" class="w-0 group-hover/vol:w-20 transition-all overflow-hidden h-1">
                         </div>
-
-                        <!-- Time -->
                         <span class="text-xs font-mono"><span id="curr-time">0:00</span> / <span id="dur-time">0:00</span></span>
                     </div>
 
                     <div class="flex items-center gap-5">
-                        <!-- Speed -->
                         <select onchange="setPlaybackSpeed(this.value)" class="bg-transparent text-xs font-bold border-none outline-none cursor-pointer hover:text-brand-500">
                             <option value="0.5" class="bg-slate-900">0.5x</option>
                             <option value="1" selected class="bg-slate-900">1x</option>
                             <option value="1.5" class="bg-slate-900">1.5x</option>
                             <option value="2" class="bg-slate-900">2x</option>
                         </select>
-
-                        <!-- Fullscreen -->
                         <button onclick="toggleFullscreen()" class="hover:text-brand-500 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                         </button>
@@ -191,13 +174,11 @@
             </div>
         </div>
 
-        <div class="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-                <h1 id="display-title" class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Video Lesson</h1>
-                <div class="flex items-center gap-2 mt-2">
-                    <span id="lesson-id-badge" class="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-[10px] font-bold uppercase tracking-wider hidden">ID: ...</span>
-                    <p class="text-slate-500 dark:text-slate-400 font-medium">Internal Secure Learning Player • EduStream v2.0</p>
-                </div>
+        <div class="mt-8">
+            <h1 id="display-title" class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Loading Lesson Content...</h1>
+            <div class="flex items-center gap-2 mt-2">
+                <span id="lesson-id-badge" class="px-2 py-0.5 bg-brand-500 text-white rounded text-[10px] font-bold uppercase tracking-wider hidden">ID: ...</span>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">Internal Secure Learning Player • EduStream v2.0</p>
             </div>
         </div>
     </main>
@@ -206,18 +187,18 @@
         const CONFIG = {
             SUPABASE_URL: 'https://pkqpvnrtxtqlngwtfnhy.supabase.co',
             SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0',
-            SHEET_ID: '1qH9wY5Zf7eXW_uNlB_p2W1zB6yLpQ_Qy_X_f_f_f_f_f', // Placeholder: Update with your actual Sheet ID
-            API_KEY: '' // Empty as per instructions, provided at runtime
+            SHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM', // Use existing ID from previous context
+            API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM' // Injected key
         };
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         const urlParams = new URLSearchParams(window.location.search);
-        const videoUrl = urlParams.get('url');
-        const courseId = urlParams.get('id');
+        const lessonIdFromUrl = urlParams.get('id');
 
         let player;
         let userEmail = "Guest Student";
         let isMuted = false;
+        let currentVideoUrl = "";
 
         function extractVideoId(url) {
             if (!url) return null;
@@ -226,73 +207,57 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        const videoId = extractVideoId(videoUrl);
-
-        /**
-         * Fetches Lesson ID from Column I (9th column) in "Sheet3"
-         */
-        async function fetchLessonIdFromSheet() {
-            if (!videoUrl) return;
+        async function fetchLessonDetails() {
+            if (!lessonIdFromUrl) {
+                document.getElementById('display-title').innerText = "Error: No Lesson ID provided.";
+                return;
+            }
 
             try {
-                // Fetch all data from Sheet3
+                // Fetch Column A to I from Sheet3
                 const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/Sheet3!A:I?key=${CONFIG.API_KEY}`);
                 const data = await response.json();
                 
                 if (data.values) {
-                    // Match row by videoUrl (usually in column A or similar)
-                    // We search through all rows to find the one matching current videoUrl
-                    const row = data.values.find(r => r.includes(videoUrl));
-                    if (row && row[8]) { // Column I is index 8
-                        const lessonId = row[8];
+                    // Match row by Lesson ID in Column I (Index 8)
+                    const row = data.values.find(r => r[8] === lessonIdFromUrl);
+                    
+                    if (row) {
+                        currentVideoUrl = row[5]; // Column F (Index 5) is the Video Link
+                        const lessonTitle = row[1]; // Column B (Index 1) is Title
+                        
+                        document.getElementById('display-title').innerText = lessonTitle;
                         const badge = document.getElementById('lesson-id-badge');
-                        badge.innerText = `ID: ${lessonId}`;
+                        badge.innerText = `ID: ${lessonIdFromUrl}`;
                         badge.classList.remove('hidden');
+
+                        // Initialize Player
+                        initYouTubePlayer(currentVideoUrl);
+                    } else {
+                        document.getElementById('display-title').innerText = "Lesson Not Found";
                     }
                 }
             } catch (err) {
-                console.error("Error fetching lesson ID from sheet:", err);
+                console.error("Sheet Fetch Error:", err);
+                document.getElementById('display-title').innerText = "Connection Error";
             }
         }
 
-        async function checkAuth() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return window.location.assign('login.html');
-            userEmail = session.user.email;
-            initWatermark();
-            fetchLessonIdFromSheet(); // Call sheet lookup after auth
-        }
+        function initYouTubePlayer(url) {
+            const vId = extractVideoId(url);
+            if (!vId) return;
 
-        function initWatermark() {
-            const watermark = document.getElementById('watermark');
-            watermark.innerText = userEmail + " - Internal Use Only";
-            
-            function moveWatermark() {
-                const container = document.getElementById('player-wrapper');
-                const maxX = container.clientWidth - watermark.clientWidth;
-                const maxY = container.clientHeight - watermark.clientHeight - 70; // Avoid controls
-                
-                const randomX = Math.floor(Math.random() * maxX);
-                const randomY = Math.floor(Math.random() * maxY);
-                
-                watermark.style.left = randomX + 'px';
-                watermark.style.top = randomY + 'px';
+            if (window.YT && window.YT.Player) {
+                createPlayer(vId);
+            } else {
+                // Wait for API if not ready
+                window.onYouTubeIframeAPIReady = () => createPlayer(vId);
             }
-            moveWatermark();
-            setInterval(moveWatermark, 8000);
         }
 
-        // YouTube API
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-        function onYouTubeIframeAPIReady() {
-            if (!videoId) return;
-
+        function createPlayer(vId) {
             player = new YT.Player('youtube-player', {
-                videoId: videoId,
+                videoId: vId,
                 playerVars: {
                     'autoplay': 0,
                     'controls': 0,
@@ -309,27 +274,16 @@
             });
         }
 
-        function formatTime(time) {
-            time = Math.round(time);
-            const minutes = Math.floor(time / 60);
-            const seconds = time % 60;
-            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        }
-
+        // Logic for Player interaction
         function onPlayerReady(event) {
-            const data = event.target.getVideoData();
-            document.getElementById('video-title').innerText = data.title;
-            document.getElementById('display-title').innerText = data.title;
+            document.getElementById('video-title').innerText = event.target.getVideoData().title;
             document.getElementById('dur-time').innerText = formatTime(player.getDuration());
-            
-            // Start progress update loop
             setInterval(updateProgressBar, 500);
         }
 
         function onPlayerStateChange(event) {
             const playIcon = document.getElementById('ctrl-play-icon');
             const pauseIcon = document.getElementById('ctrl-pause-icon');
-            
             if (event.data == YT.PlayerState.PLAYING) {
                 playIcon.classList.add('hidden');
                 pauseIcon.classList.remove('hidden');
@@ -344,25 +298,27 @@
                 const currTime = player.getCurrentTime();
                 const duration = player.getDuration();
                 const percent = (currTime / duration) * 100;
-                
                 document.getElementById('progress-bar').style.width = percent + '%';
                 document.getElementById('curr-time').innerText = formatTime(currTime);
             }
         }
 
         function togglePlay() {
+            if (!player) return;
             const state = player.getPlayerState();
             if (state === YT.PlayerState.PLAYING) player.pauseVideo();
             else player.playVideo();
         }
 
         function seek(event) {
+            if (!player) return;
             const rect = document.getElementById('progress-container').getBoundingClientRect();
             const pos = (event.clientX - rect.left) / rect.width;
             player.seekTo(pos * player.getDuration());
         }
 
         function setVolume(val) {
+            if (!player) return;
             player.setVolume(val);
             player.unMute();
             isMuted = false;
@@ -370,13 +326,9 @@
         }
 
         function toggleMute() {
-            if (player.isMuted()) {
-                player.unMute();
-                isMuted = false;
-            } else {
-                player.mute();
-                isMuted = true;
-            }
+            if (!player) return;
+            if (player.isMuted()) { player.unMute(); isMuted = false; }
+            else { player.mute(); isMuted = true; }
             updateVolIcons();
         }
 
@@ -386,24 +338,48 @@
         }
 
         function setPlaybackSpeed(speed) {
-            player.setPlaybackRate(parseFloat(speed));
+            if (player) player.setPlaybackRate(parseFloat(speed));
         }
 
         function toggleFullscreen() {
             const elem = document.getElementById('player-wrapper');
-            if (!document.fullscreenElement) {
-                elem.requestFullscreen().catch(err => {
-                    console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-                });
-            } else {
-                document.exitFullscreen();
-            }
+            if (!document.fullscreenElement) elem.requestFullscreen();
+            else document.exitFullscreen();
         }
 
-        function goBack() {
-            if (courseId) window.location.assign(`curriculum.html?id=${courseId}`);
-            else window.history.back();
+        function formatTime(time) {
+            time = Math.round(time);
+            const m = Math.floor(time / 60);
+            const s = time % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
         }
+
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return window.location.assign('login.html');
+            userEmail = session.user.email;
+            initWatermark();
+            fetchLessonDetails();
+        }
+
+        function initWatermark() {
+            const watermark = document.getElementById('watermark');
+            watermark.innerText = userEmail + " - Secure Access";
+            const move = () => {
+                const container = document.getElementById('player-wrapper');
+                watermark.style.left = Math.floor(Math.random() * (container.clientWidth - 150)) + 'px';
+                watermark.style.top = Math.floor(Math.random() * (container.clientHeight - 100)) + 'px';
+            };
+            move();
+            setInterval(move, 10000);
+        }
+
+        function goBack() { window.history.back(); }
+
+        // YouTube API Init
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
 
         checkAuth();
     </script>
