@@ -27,6 +27,12 @@
                 }
             }
         };
+        // Initial theme check
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
     </script>
     <style>
         body {
@@ -40,9 +46,10 @@
         }
         .month-card.active {
             background-color: #16a34a;
-            color: white;
+            color: white !important;
             box-shadow: 0 12px 20px -8px rgba(22, 163, 74, 0.5);
             transform: scale(1.02);
+            border-color: #16a34a;
         }
         
         .lesson-card {
@@ -85,11 +92,11 @@
             <div class="flex items-center gap-4">
                 <div id="user-profile" class="hidden sm:flex items-center gap-3 pr-4 border-r border-slate-200 dark:border-slate-800">
                     <div class="text-right">
-                        <p id="user-email" class="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[150px]">User</p>
+                        <p id="user-email" class="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[150px]">Loading...</p>
                         <p class="text-[10px] text-slate-500 uppercase tracking-tighter">Student Account</p>
                     </div>
-                    <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                    <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 overflow-hidden">
+                        <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="w-full h-full object-cover">
                     </div>
                 </div>
                 <button onclick="handleLogout()" class="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors uppercase tracking-widest">Logout</button>
@@ -156,15 +163,18 @@
         </div>
     </main>
 
-    <script src="supabase.js"></script>
     <script>
         const CONFIG = {
-            // Google Sheets
+            // Supabase Config (Matching your Explore Courses page)
+            SUPABASE_URL: 'https://pkqpvnrtxtqlngwtfnhy.supabase.co',
+            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0',
+            
+            // Google Sheets Config
             GOOGLE_SHEETS_API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM',
             SPREADSHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM',
         };
 
-        // Initialize Supabase using values from CONFIG
+        // Initialize Supabase
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
         const MONTH_NAMES = [
@@ -179,28 +189,31 @@
         const urlParams = new URLSearchParams(window.location.search);
         const targetCourseId = urlParams.get('id');
 
-        // --- Auth Logic ---
-        async function checkUser() {
-            const { data: { session }, error } = await supabaseClient.auth.getSession();
+        // --- AUTH LOGIC ---
+        // Exactly the same logic as Explore Courses: Check session and redirect if missing
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
             
-            if (error || !session) {
-                // If not logged in, redirect to login page
-                window.location.href = 'index.html';
-                return null;
+            if (!session) {
+                // Not logged in -> Redirect to login
+                return window.location.assign('login.html');
             }
 
-            // Update UI with user info
+            // User is logged in, update UI
             document.getElementById('user-email').innerText = session.user.email;
+            document.getElementById('user-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.id}`;
             document.getElementById('app-container').classList.remove('opacity-0');
-            return session.user;
+            
+            // Start loading page data
+            startApp();
         }
 
         async function handleLogout() {
             await supabaseClient.auth.signOut();
-            window.location.href = 'index.html';
+            window.location.assign('login.html');
         }
 
-        // --- Data Logic ---
+        // --- DATA LOGIC ---
         function showError() {
             document.getElementById('main-content-layout').classList.add('hidden');
             document.getElementById('error-view').classList.remove('hidden');
@@ -239,14 +252,15 @@
 
                 if (data.values) {
                     allLessons = data.values.slice(1).map(row => ({
-                        id: row[0],
+                        courseId: row[0],
                         title: row[1] || 'Untitled Lesson',
                         description: row[2] || 'No description available.',
                         linkBase: row[5] || 'lesson.html',
                         monthNum: parseInt(row[7]) || 1
                     }));
 
-                    filteredLessons = allLessons.filter(l => l.id === targetCourseId);
+                    // Filter by the course ID passed in URL
+                    filteredLessons = allLessons.filter(l => l.courseId === targetCourseId);
 
                     if (filteredLessons.length === 0) {
                         showError();
@@ -257,7 +271,7 @@
                 }
             } catch (error) {
                 console.error("Error loading lessons:", error);
-                document.getElementById('lesson-grid').innerHTML = `<div class="col-span-full text-center text-red-500">Connection failed. Please refresh.</div>`;
+                document.getElementById('lesson-grid').innerHTML = `<div class="col-span-full text-center text-red-500 py-10">Connection failed. Please refresh the page.</div>`;
             }
         }
 
@@ -270,7 +284,7 @@
             container.innerHTML = availableMonths.map(m => `
                 <button onclick="selectMonth(${m})" id="btn-month-${m}" class="month-card whitespace-nowrap px-6 py-4 rounded-2xl text-left font-bold text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-500 transition-all">
                     <span class="block text-[10px] opacity-50 uppercase mb-0.5">Month ${m}</span>
-                    ${MONTH_NAMES[m-1]}
+                    ${MONTH_NAMES[m-1] || 'Month ' + m}
                 </button>
             `).join('');
 
@@ -279,7 +293,7 @@
 
         function selectMonth(m) {
             selectedMonth = m;
-            document.getElementById('current-month-title').innerText = `${MONTH_NAMES[m-1]} Modules`;
+            document.getElementById('current-month-title').innerText = `${MONTH_NAMES[m-1] || 'Month ' + m} Modules`;
             
             document.querySelectorAll('.month-card').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-month-${m}`);
@@ -300,8 +314,8 @@
 
             grid.innerHTML = finalDisplayList.map((l, index) => {
                 const finalLink = l.linkBase.includes('?') 
-                    ? `${l.linkBase}&id=${l.id}` 
-                    : `${l.linkBase}?id=${l.id}`;
+                    ? `${l.linkBase}&id=${targetCourseId}` 
+                    : `${l.linkBase}?id=${targetCourseId}`;
 
                 return `
                 <a href="${finalLink}" class="lesson-card group bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800/50 rounded-[2rem] p-8 flex justify-between items-center animate-fade-in" style="animation-delay: ${index * 0.1}s">
@@ -319,16 +333,14 @@
             }).join('');
         }
 
-        // Initialize App
-        async function init() {
-            const user = await checkUser();
-            if (user) {
-                fetchCourseInfo();
-                fetchLessons();
-            }
+        // Initialize App Flow
+        function startApp() {
+            fetchCourseInfo();
+            fetchLessons();
         }
 
-        init();
+        // Call auth check immediately on load
+        checkAuth();
     </script>
 </body>
 </html>
