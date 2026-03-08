@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explore Courses | EduStream</title>
+    <title>Instructor Courses | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -73,25 +73,25 @@
         <div class="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
             <div class="space-y-4">
                 <div class="flex items-center gap-3">
-                    <span class="text-emerald-600 dark:text-emerald-500 font-bold tracking-widest text-xs uppercase">Learning Hub</span>
+                    <span class="text-emerald-600 dark:text-emerald-500 font-bold tracking-widest text-xs uppercase">Instructor Portfolio</span>
                     <div id="view-mode-indicator" class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase hidden">Teacher Mode</div>
                 </div>
-                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                <h1 id="page-title" class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
                     Explore <span class="text-emerald-600">Courses</span>
                 </h1>
-                <p id="view-description" class="text-slate-500 dark:text-slate-400 max-w-xl text-lg">Browse our catalog or manage your own curriculum.</p>
+                <p id="view-description" class="text-slate-500 dark:text-slate-400 max-w-xl text-lg">Browsing courses curated by our leading experts.</p>
             </div>
             
             <div class="flex flex-col sm:flex-row items-center gap-4">
                 <div class="relative flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full sm:w-auto overflow-hidden">
-                    <input type="text" id="search-input" placeholder="Search courses..." class="pl-12 pr-4 py-3 bg-transparent text-sm font-medium focus:outline-none w-full sm:w-64 dark:text-white" />
+                    <input type="text" id="search-input" placeholder="Search these courses..." class="pl-12 pr-4 py-3 bg-transparent text-sm font-medium focus:outline-none w-full sm:w-64 dark:text-white" />
                     <svg class="absolute left-4 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
 
-                <button id="view-toggle" class="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-emerald-500/10 whitespace-nowrap">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                    <span id="toggle-text">Switch to Teacher View</span>
-                </button>
+                <a href="instructors.html" class="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-emerald-500/10 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    <span>Back to Instructors</span>
+                </a>
             </div>
         </div>
 
@@ -118,18 +118,15 @@
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         
+        // URL Parameter Logic
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlInstructorId = urlParams.get('id'); // Get ?id=xxx from URL
+
         let allCourses = [];
-        let allTeachers = {}; // Dictionary mapped by TeacherID
+        let allTeachers = {}; 
         let currentUserId = null;
-        let isTeacherView = false;
         let activeCategory = 'all';
         let searchQuery = '';
-
-        // UI Element Selectors
-        const viewToggleBtn = document.getElementById('view-toggle');
-        const toggleText = document.getElementById('toggle-text');
-        const viewIndicator = document.getElementById('view-mode-indicator');
-        const viewDescription = document.getElementById('view-description');
 
         // Theme Logic
         document.getElementById('theme-toggle').onclick = () => {
@@ -145,20 +142,6 @@
         };
         updateIcons();
 
-        viewToggleBtn.onclick = () => {
-            isTeacherView = !isTeacherView;
-            toggleText.innerText = isTeacherView ? 'Switch to Student View' : 'Switch to Teacher View';
-            viewIndicator.classList.toggle('hidden', !isTeacherView);
-            viewDescription.innerText = isTeacherView ? "Managing your published content and tracking student engagement." : "Browse our catalog or manage your own curriculum.";
-            
-            if(isTeacherView) {
-                viewToggleBtn.classList.replace('bg-slate-900', 'bg-slate-700');
-            } else {
-                viewToggleBtn.classList.replace('bg-slate-700', 'bg-slate-900');
-            }
-            renderCourses();
-        };
-
         document.getElementById('search-input').oninput = (e) => {
             searchQuery = e.target.value.toLowerCase();
             renderCourses();
@@ -170,13 +153,12 @@
             currentUserId = session.user.id;
             
             try {
-                // 1. Fetch Teacher Metadata from "Teachers" Sheet
+                // 1. Fetch Teacher Metadata
                 const teacherUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Teachers!A:E?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const teacherRes = await fetch(teacherUrl);
                 const teacherData = await teacherRes.json();
                 
                 if (teacherData && teacherData.values) {
-                    // Map teachers into an object for fast lookup: { "ID": { name, bio, avatar } }
                     teacherData.values.slice(1).forEach(row => {
                         allTeachers[row[0]] = {
                             id: row[0],
@@ -188,9 +170,12 @@
                     });
                 }
 
-                // 2. Fetch Courses from "Sheet2"
-                // Column Map updated based on your request:
-                // 0:ID, 1:Title, 2:Desc, 3:Image, 4:TeacherID (COL E), 5:Price, 6:Category (Assume G)
+                // Update UI Title if viewing a specific instructor
+                if (urlInstructorId && allTeachers[urlInstructorId]) {
+                    document.getElementById('page-title').innerHTML = `Courses by <span class="text-emerald-600">${allTeachers[urlInstructorId].name}</span>`;
+                }
+
+                // 2. Fetch Courses
                 const courseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:G?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const courseRes = await fetch(courseUrl);
                 const courseData = await courseRes.json();
@@ -201,7 +186,7 @@
                         title: row[1] || 'Untitled Course',
                         description: row[2] || 'Comprehensive training program.',
                         image: row[3] || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800',
-                        teacherId: row[4] || '', // COL E
+                        teacherId: row[4] || '', 
                         price: row[5] || 'Free',
                         category: row[6] || 'General'
                     }));
@@ -217,7 +202,10 @@
 
         function setupCategories() {
             const filterContainer = document.getElementById('category-filters');
-            const categories = [...new Set(allCourses.map(c => c.category))];
+            
+            // If filtering by instructor, only show categories that instructor has courses in
+            let sourceList = urlInstructorId ? allCourses.filter(c => c.teacherId === urlInstructorId) : allCourses;
+            const categories = [...new Set(sourceList.map(c => c.category))];
             
             categories.forEach(cat => {
                 const btn = document.createElement('button');
@@ -244,9 +232,9 @@
             const grid = document.getElementById('course-grid');
             let filtered = allCourses;
 
-            // Teacher View Filter: Match course's teacherId (Col E) with logged in user's ID
-            if (isTeacherView) {
-                filtered = filtered.filter(c => c.teacherId === currentUserId);
+            // NEW LOGIC: Filter by instructor ID from URL if present
+            if (urlInstructorId) {
+                filtered = filtered.filter(c => c.teacherId === urlInstructorId);
             }
 
             if (activeCategory !== 'all') {
@@ -261,7 +249,7 @@
             }
 
             if (filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-32 text-center text-slate-500 font-medium">No results found for your criteria.</div>`;
+                grid.innerHTML = `<div class="col-span-full py-32 text-center text-slate-500 font-medium">No courses found for this instructor matching your criteria.</div>`;
                 return;
             }
 
@@ -300,9 +288,9 @@
                                     ${c.price === 'Free' ? 'Free' : '$' + c.price}
                                 </span>
                             </div>
-                            <a href="${isTeacherView ? 'manage-course.html?id=' + c.id : 'singlecourse.html?id=' + c.id}" 
-                               class="px-5 py-2.5 ${isTeacherView ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'bg-emerald-600 text-white'} hover:bg-emerald-700 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all">
-                                ${isTeacherView ? 'Manage' : 'Enroll'}
+                            <a href="singlecourse.html?id=${c.id}" 
+                               class="px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all">
+                                Enroll
                             </a>
                         </div>
                     </div>
