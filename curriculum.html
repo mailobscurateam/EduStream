@@ -236,18 +236,19 @@
         async function fetchLessons() {
             if (!targetCourseId) return;
             try {
-                const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet3!A:H?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`);
+                // Fetch up to Column I (Index 8) to get the Lesson ID
+                const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet3!A:I?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`);
                 const data = await response.json();
                 if (data.values) {
                     allLessons = data.values.slice(1).map(row => ({
                         courseId: row[0],
                         title: row[1] || 'Untitled Module',
                         description: row[2] || 'No description available.',
-                        // Column E is index 4, Column F is index 5
                         externalUrl: row[4] || '#', 
                         videoUrl: row[5] || '#',
-                        contentType: row[6] || '', // Column G (Index 6)
-                        monthNum: parseInt(row[7]) || 1
+                        contentType: row[6] || '',
+                        monthNum: parseInt(row[7]) || 1,
+                        lessonId: row[8] || '' // Column I (Index 8)
                     }));
                     filteredLessons = allLessons.filter(l => l.courseId === targetCourseId);
                     if (filteredLessons.length === 0) return showError();
@@ -291,7 +292,8 @@
                 let finalUrl, targetAttr;
 
                 if (isVideo) {
-                    finalUrl = `lesson.html?id=${targetCourseId}&url=${encodeURIComponent(l.videoUrl)}`;
+                    // Update: Use Lesson ID from Column I in the URL query string
+                    finalUrl = `lesson.html?id=${l.lessonId}&url=${encodeURIComponent(l.videoUrl)}`;
                     targetAttr = '_self';
                 } else {
                     finalUrl = l.externalUrl;
