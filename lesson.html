@@ -187,8 +187,8 @@
         const CONFIG = {
             SUPABASE_URL: 'https://pkqpvnrtxtqlngwtfnhy.supabase.co',
             SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrcXB2bnJ0eHRxbG5nd3Rmbmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQxNTUsImV4cCI6MjA4NTk1MDE1NX0.wrYYlIzt1slOXkbUAqAaSI1bA9xJ2N8QhNHSRJIkZR0',
-            SHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM', // Use existing ID from previous context
-            API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM' // Injected key
+            SHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM',
+            API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM'
         };
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -198,7 +198,8 @@
         let player;
         let userEmail = "Guest Student";
         let isMuted = false;
-        let currentVideoUrl = "";
+        let isApiReady = false;
+        let videoIdToLoad = null;
 
         function extractVideoId(url) {
             if (!url) return null;
@@ -214,25 +215,22 @@
             }
 
             try {
-                // Fetch Column A to I from Sheet3
                 const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/Sheet3!A:I?key=${CONFIG.API_KEY}`);
                 const data = await response.json();
                 
                 if (data.values) {
-                    // Match row by Lesson ID in Column I (Index 8)
                     const row = data.values.find(r => r[8] === lessonIdFromUrl);
-                    
                     if (row) {
-                        currentVideoUrl = row[5]; // Column F (Index 5) is the Video Link
-                        const lessonTitle = row[1]; // Column B (Index 1) is Title
+                        const videoUrl = row[5]; 
+                        const lessonTitle = row[1];
                         
                         document.getElementById('display-title').innerText = lessonTitle;
                         const badge = document.getElementById('lesson-id-badge');
                         badge.innerText = `ID: ${lessonIdFromUrl}`;
                         badge.classList.remove('hidden');
 
-                        // Initialize Player
-                        initYouTubePlayer(currentVideoUrl);
+                        videoIdToLoad = extractVideoId(videoUrl);
+                        checkReady();
                     } else {
                         document.getElementById('display-title').innerText = "Lesson Not Found";
                     }
@@ -243,19 +241,20 @@
             }
         }
 
-        function initYouTubePlayer(url) {
-            const vId = extractVideoId(url);
-            if (!vId) return;
+        // YouTube API Global Callback
+        window.onYouTubeIframeAPIReady = () => {
+            isApiReady = true;
+            checkReady();
+        };
 
-            if (window.YT && window.YT.Player) {
-                createPlayer(vId);
-            } else {
-                // Wait for API if not ready
-                window.onYouTubeIframeAPIReady = () => createPlayer(vId);
+        function checkReady() {
+            if (isApiReady && videoIdToLoad) {
+                createPlayer(videoIdToLoad);
             }
         }
 
         function createPlayer(vId) {
+            if (player) return; // Prevent double initialization
             player = new YT.Player('youtube-player', {
                 videoId: vId,
                 playerVars: {
@@ -269,22 +268,23 @@
                 },
                 events: {
                     'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': onPlayerStateChange,
+                    'onError': (e) => console.error("YT Player Error:", e.data)
                 }
             });
         }
 
-        // Logic for Player interaction
         function onPlayerReady(event) {
             document.getElementById('video-title').innerText = event.target.getVideoData().title;
-            document.getElementById('dur-time').innerText = formatTime(player.getDuration());
+            const duration = player.getDuration();
+            document.getElementById('dur-time').innerText = formatTime(duration);
             setInterval(updateProgressBar, 500);
         }
 
         function onPlayerStateChange(event) {
             const playIcon = document.getElementById('ctrl-play-icon');
             const pauseIcon = document.getElementById('ctrl-pause-icon');
-            if (event.data == YT.PlayerState.PLAYING) {
+            if (event.data === YT.PlayerState.PLAYING) {
                 playIcon.classList.add('hidden');
                 pauseIcon.classList.remove('hidden');
             } else {
@@ -294,12 +294,14 @@
         }
 
         function updateProgressBar() {
-            if (player && player.getCurrentTime) {
+            if (player && typeof player.getCurrentTime === 'function') {
                 const currTime = player.getCurrentTime();
                 const duration = player.getDuration();
-                const percent = (currTime / duration) * 100;
-                document.getElementById('progress-bar').style.width = percent + '%';
-                document.getElementById('curr-time').innerText = formatTime(currTime);
+                if (duration > 0) {
+                    const percent = (currTime / duration) * 100;
+                    document.getElementById('progress-bar').style.width = percent + '%';
+                    document.getElementById('curr-time').innerText = formatTime(currTime);
+                }
             }
         }
 
@@ -343,11 +345,12 @@
 
         function toggleFullscreen() {
             const elem = document.getElementById('player-wrapper');
-            if (!document.fullscreenElement) elem.requestFullscreen();
+            if (!document.fullscreenElement) elem.requestFullscreen().catch(err => console.error(err));
             else document.exitFullscreen();
         }
 
         function formatTime(time) {
+            if (isNaN(time)) return "0:00";
             time = Math.round(time);
             const m = Math.floor(time / 60);
             const s = time % 60;
@@ -367,6 +370,7 @@
             watermark.innerText = userEmail + " - Secure Access";
             const move = () => {
                 const container = document.getElementById('player-wrapper');
+                if (!container) return;
                 watermark.style.left = Math.floor(Math.random() * (container.clientWidth - 150)) + 'px';
                 watermark.style.top = Math.floor(Math.random() * (container.clientHeight - 100)) + 'px';
             };
@@ -376,10 +380,11 @@
 
         function goBack() { window.history.back(); }
 
-        // YouTube API Init
+        // YouTube API Init - Use standard script injection
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
-        document.head.appendChild(tag);
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
         checkAuth();
     </script>
