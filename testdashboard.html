@@ -251,7 +251,7 @@
                     const teachers = data.values.slice(1, 6); // Take top 5
                     document.getElementById('stat-teachers').textContent = data.values.length - 1;
                     document.getElementById('teachers-list').innerHTML = teachers.map(t => `
-                        <a href="singleinstructor.html?id=${t[0]}" class="group flex items-center gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 transition shadow-sm">
+                        <a href="course.html?id=${t[0]}" class="group flex items-center gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 transition shadow-sm">
                             <img src="${t[3] || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200'}" class="w-14 h-14 rounded-full object-cover border-2 border-slate-100 dark:border-slate-800 group-hover:border-emerald-500 transition-colors">
                             <div class="flex-1">
                                 <h4 class="font-bold text-slate-800 dark:text-white text-sm group-hover:text-emerald-600 transition-colors">${t[1]}</h4>
