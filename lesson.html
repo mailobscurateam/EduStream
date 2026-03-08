@@ -221,7 +221,8 @@
                 if (data.values) {
                     const row = data.values.find(r => r[8] === lessonIdFromUrl);
                     if (row) {
-                        const videoUrl = row[5]; 
+                        // Updated to get video link from Column E (Index 4)
+                        const videoUrl = row[4]; 
                         const lessonTitle = row[1];
                         
                         document.getElementById('display-title').innerText = lessonTitle;
