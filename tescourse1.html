@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Curriculum | EduStream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                }
+            }
+        };
+    </script>
+    <style>
+        .month-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .month-card.active {
+            background-color: #059669;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);
+        }
+        .lesson-card:hover {
+            transform: translateY(-2px);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-300">
+
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="dashboard.html" class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
+                <span class="text-xl font-extrabold text-slate-900 dark:text-white">EduStream</span>
+            </a>
+            <div id="course-breadcrumb" class="text-sm font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-1.5 rounded-full">
+                Loading Curriculum...
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="mb-8">
+            <h1 id="course-main-title" class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Curriculum</h1>
+            <p id="course-tagline" class="text-slate-500 dark:text-slate-400 mt-1">Manage your progress through the monthly modules.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-12">
+            
+            <!-- Sidebar Navigation: Months -->
+            <aside class="lg:w-64 flex-shrink-0">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 px-4">Select Month</h2>
+                <div id="month-list" class="flex flex-row lg:flex-col gap-2 overflow-x-auto pb-4 lg:pb-0 no-scrollbar">
+                    <!-- Months will be injected here -->
+                </div>
+            </aside>
+
+            <!-- Lesson Content Area -->
+            <div class="flex-grow">
+                <div class="mb-10">
+                    <h2 id="current-month-title" class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Select a month</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Lessons and materials assigned for this period.</p>
+                </div>
+
+                <div id="lesson-grid" class="grid grid-cols-1 gap-4">
+                    <div class="col-span-full py-20 text-center text-slate-400">
+                        <svg class="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <p>Loading your curriculum...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const CONFIG = {
+            GOOGLE_SHEETS_API_KEY: 'AIzaSyDzdiDMtiY250DS-lDuZeIZOocw9oqMlhM',
+            SPREADSHEET_ID: '1_ALK5Bkz-D0LIia1fLc_NmA12Zm8KRylJNYjnfhPezM'
+        };
+
+        const MONTH_NAMES = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        let allLessons = [];
+        let filteredLessons = [];
+        let selectedMonth = null;
+        
+        // Get the ID from the URL parameter (?id=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetCourseId = urlParams.get('id');
+
+        async function fetchCourseInfo() {
+            if (!targetCourseId) {
+                document.getElementById('course-breadcrumb').innerText = "All Lessons";
+                return;
+            }
+
+            try {
+                // Fetch from Sheet2 to verify course name if needed
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:B?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.values) {
+                    const course = data.values.find(row => row[0] === targetCourseId);
+                    if (course) {
+                        const courseName = course[1];
+                        document.getElementById('course-breadcrumb').innerText = courseName;
+                        document.getElementById('course-main-title').innerText = courseName;
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading course info:", error);
+            }
+        }
+
+        async function fetchLessons() {
+            try {
+                // Fetch from Sheet3, Columns A to H
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet3!A:H?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.values) {
+                    // 1. Map all data
+                    allLessons = data.values.slice(1).map(row => ({
+                        id: row[0], // ID from Column A
+                        title: row[1] || 'Untitled Lesson',
+                        description: row[2] || 'No description available.',
+                        linkBase: row[5] || 'lesson.html',
+                        monthNum: parseInt(row[7]) || 1
+                    }));
+
+                    // 2. Filter lessons to ONLY show those matching the ID from the URL
+                    // Assuming column A in Sheet3 relates to the Course ID or the specific lesson identifier provided in the URL
+                    if (targetCourseId) {
+                        filteredLessons = allLessons.filter(l => l.id === targetCourseId);
+                    } else {
+                        filteredLessons = allLessons;
+                    }
+
+                    if (filteredLessons.length === 0) {
+                        document.getElementById('lesson-grid').innerHTML = `
+                            <div class="col-span-full py-20 text-center text-slate-400">
+                                No lessons found for ID: ${targetCourseId}
+                            </div>`;
+                        return;
+                    }
+
+                    renderMonthSidebar();
+                }
+            } catch (error) {
+                console.error("Error loading lessons:", error);
+                document.getElementById('lesson-grid').innerHTML = `<div class="col-span-full text-center text-red-500">Failed to load lesson data.</div>`;
+            }
+        }
+
+        function renderMonthSidebar() {
+            const container = document.getElementById('month-list');
+            // Unique months from the filtered subset
+            const availableMonths = [...new Set(filteredLessons.map(l => l.monthNum))].sort((a, b) => a - b);
+            
+            if (availableMonths.length === 0) {
+                container.innerHTML = `<p class="px-4 text-xs text-slate-400">No data available.</p>`;
+                return;
+            }
+
+            container.innerHTML = availableMonths.map(m => `
+                <button onclick="selectMonth(${m})" id="btn-month-${m}" class="month-card whitespace-nowrap px-6 py-3 rounded-2xl text-left font-bold text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500 transition-all">
+                    ${MONTH_NAMES[m-1]}
+                </button>
+            `).join('');
+
+            // Auto-select the first available month for this specific ID
+            selectMonth(availableMonths[0]);
+        }
+
+        function selectMonth(m) {
+            selectedMonth = m;
+            document.getElementById('current-month-title').innerText = `${MONTH_NAMES[m-1]} Lessons`;
+            
+            document.querySelectorAll('.month-card').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-month-${m}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            renderLessons();
+        }
+
+        function renderLessons() {
+            const grid = document.getElementById('lesson-grid');
+            // Filter the already filtered list by the selected month
+            const finalDisplayList = filteredLessons.filter(l => l.monthNum === selectedMonth);
+
+            if (finalDisplayList.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400">No lessons scheduled for this month.</div>`;
+                return;
+            }
+
+            grid.innerHTML = finalDisplayList.map(l => {
+                const finalLink = l.linkBase.includes('?') 
+                    ? `${l.linkBase}&id=${l.id}` 
+                    : `${l.linkBase}?id=${l.id}`;
+
+                return `
+                <a href="${finalLink}" class="lesson-card group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex justify-between items-center shadow-sm hover:shadow-md hover:border-emerald-500 transition-all duration-300">
+                    <div class="flex-grow pr-4">
+                        <h3 class="font-bold text-slate-900 dark:text-white text-lg mb-1 group-hover:text-emerald-600 transition-colors">${l.title}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">${l.description}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                </a>`;
+            }).join('');
+        }
+
+        // Run
+        fetchCourseInfo();
+        fetchLessons();
+    </script>
+</body>
+</html>
