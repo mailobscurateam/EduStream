@@ -28,7 +28,6 @@
             }
         };
 
-        // Theme management script
         const applyTheme = (theme) => {
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
@@ -88,7 +87,6 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-500 text-slate-900 dark:text-slate-100">
 
-    <!-- Premium Navigation -->
     <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-8">
@@ -102,7 +100,6 @@
             </div>
             
             <div class="flex items-center gap-2 sm:gap-6">
-                <!-- Theme Toggle Button -->
                 <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 border border-slate-200 dark:border-slate-700 transition-all">
                     <svg id="theme-icon-dark" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                     <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m3.343-5.657l-.707.707m12.728 12.728l-.707.707M6.343 17.657l-.707-.707M17.657 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -123,7 +120,6 @@
     </header>
 
     <main id="app-container" class="max-w-7xl mx-auto px-6 py-12 opacity-0 transition-opacity duration-700">
-        <!-- Hero Section -->
         <div class="mb-14 relative">
             <h1 id="course-main-title" class="text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-4">Curriculum</h1>
             <div class="flex items-center gap-4">
@@ -133,21 +129,16 @@
         </div>
 
         <div id="main-content-layout" class="flex flex-col lg:flex-row gap-12">
-            
-            <!-- Sidebar Navigation -->
             <aside class="lg:w-72 flex-shrink-0">
                 <div class="sticky top-32">
                     <div class="flex items-center justify-between mb-6 px-4">
                         <h2 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Timeline</h2>
                         <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
                     </div>
-                    <div id="month-list" class="flex flex-row lg:flex-col gap-3 overflow-x-auto pb-6 lg:pb-0 no-scrollbar">
-                        <!-- Months injected here -->
-                    </div>
+                    <div id="month-list" class="flex flex-row lg:flex-col gap-3 overflow-x-auto pb-6 lg:pb-0 no-scrollbar"></div>
                 </div>
             </aside>
 
-            <!-- Content Area -->
             <div class="flex-grow">
                 <div class="flex items-end justify-between mb-10 pb-6 border-b border-slate-200 dark:border-slate-800">
                     <div>
@@ -155,31 +146,17 @@
                         <p class="text-slate-500 dark:text-slate-400 mt-2 font-medium">Unlocked <span id="lesson-count" class="text-brand-600 dark:text-brand-400 font-bold">0</span> educational modules</p>
                     </div>
                 </div>
-
-                <div id="lesson-grid" class="grid grid-cols-1 gap-6">
-                    <!-- Lessons injected here -->
-                    <div class="py-20 text-center">
-                        <div class="animate-pulse space-y-6">
-                            <div class="h-24 bg-slate-200 dark:bg-slate-800 rounded-[2rem] w-full"></div>
-                            <div class="h-24 bg-slate-200 dark:bg-slate-800 rounded-[2rem] w-full opacity-60"></div>
-                        </div>
-                    </div>
-                </div>
+                <div id="lesson-grid" class="grid grid-cols-1 gap-6"></div>
             </div>
         </div>
 
-        <!-- Error View -->
         <div id="error-view" class="hidden py-12 animate-fade-in">
             <div class="max-w-xl mx-auto bg-white dark:bg-slate-900 p-12 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none text-center">
                 <div class="w-24 h-24 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-10 rotate-3">
                     <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
                 <h2 class="text-3xl font-black text-slate-900 dark:text-white mb-4">Curriculum Not Found</h2>
-                <p class="text-slate-500 dark:text-slate-400 mb-10 text-lg leading-relaxed">The curriculum you're looking for might have been moved or doesn't exist. Please return to the dashboard.</p>
-                <a href="dashboard.html" class="inline-flex items-center gap-3 px-10 py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/20 dark:shadow-white/10">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    Go Back Home
-                </a>
+                <a href="dashboard.html" class="inline-flex items-center gap-3 px-10 py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl">Go Back Home</a>
             </div>
         </div>
     </main>
@@ -200,7 +177,6 @@
         let selectedMonth = null;
         const targetCourseId = new URLSearchParams(window.location.search).get('id');
 
-        // --- Theme Toggle Logic ---
         function toggleTheme() {
             const isDark = document.documentElement.classList.contains('dark');
             applyTheme(isDark ? 'light' : 'dark');
@@ -213,11 +189,9 @@
             document.getElementById('theme-icon-light').classList.toggle('hidden', !isDark);
         }
 
-        // --- Auth & Lifecycle ---
         async function checkAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return window.location.assign('login.html');
-
             document.getElementById('user-email').innerText = session.user.email;
             document.getElementById('user-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.id}`;
             document.getElementById('app-container').classList.remove('opacity-0');
@@ -229,7 +203,6 @@
             window.location.assign('login.html');
         }
 
-        // --- Content Logic ---
         async function startApp() {
             updateThemeIcons();
             fetchCourseInfo();
@@ -261,8 +234,10 @@
                         courseId: row[0],
                         title: row[1] || 'Untitled Module',
                         description: row[2] || 'No description available.',
-                        contentUrl: row[5] || '#',
-                        contentType: row[6] || '', // Column G
+                        // Column E is index 4, Column F is index 5
+                        externalUrl: row[4] || '#', 
+                        videoUrl: row[5] || '#',
+                        contentType: row[6] || '', // Column G (Index 6)
                         monthNum: parseInt(row[7]) || 1
                     }));
                     filteredLessons = allLessons.filter(l => l.courseId === targetCourseId);
@@ -275,8 +250,6 @@
         function renderMonthSidebar() {
             const container = document.getElementById('month-list');
             const availableMonths = [...new Set(filteredLessons.map(l => l.monthNum))].sort((a, b) => a - b);
-            if (availableMonths.length === 0) return showError();
-
             container.innerHTML = availableMonths.map(m => `
                 <button onclick="selectMonth(${m})" id="btn-month-${m}" class="month-card whitespace-nowrap px-6 py-4 rounded-2xl text-left font-bold text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-all">
                     <span class="block text-[10px] opacity-50 uppercase mb-0.5 tracking-wider">Month ${m}</span>
@@ -300,7 +273,7 @@
             document.getElementById('lesson-count').innerText = list.length;
 
             if (list.length === 0) {
-                grid.innerHTML = `<div class="py-20 text-center text-slate-400 font-medium">No active modules for this month yet.</div>`;
+                grid.innerHTML = `<div class="py-20 text-center text-slate-400">No modules for this month.</div>`;
                 return;
             }
 
@@ -309,12 +282,12 @@
                 let finalUrl, targetAttr;
 
                 if (isVideo) {
-                    // Logic for Video: Open in internal lesson.html viewer
-                    finalUrl = `lesson.html?id=${targetCourseId}&url=${encodeURIComponent(l.contentUrl)}`;
+                    // Internal viewer uses Column F (videoUrl)
+                    finalUrl = `lesson.html?id=${targetCourseId}&url=${encodeURIComponent(l.videoUrl)}`;
                     targetAttr = '_self';
                 } else {
-                    // Logic for non-video or blank: Open content directly in a new tab
-                    finalUrl = l.contentUrl;
+                    // External link uses Column E (externalUrl)
+                    finalUrl = l.externalUrl;
                     targetAttr = '_blank';
                 }
 
@@ -337,8 +310,6 @@
         function showError() {
             document.getElementById('main-content-layout').classList.add('hidden');
             document.getElementById('error-view').classList.remove('hidden');
-            document.getElementById('course-breadcrumb').classList.add('hidden');
-            document.getElementById('course-main-title').innerText = "Oops!";
         }
 
         checkAuth();
