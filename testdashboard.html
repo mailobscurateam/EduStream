@@ -57,13 +57,13 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- Hero Countdown Section -->
+        <!-- Hero Countdown Section (Upcoming Live Class) -->
         <section id="hero-countdown" class="relative overflow-hidden bg-emerald-900 rounded-3xl p-8 md:p-12 mb-10 text-white hidden">
             <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
                 <div class="max-w-xl">
                     <span class="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-xs font-bold tracking-widest uppercase mb-4">Upcoming Live Class</span>
                     <h1 id="next-live-title" class="text-3xl md:text-4xl font-bold mb-4">Loading next session...</h1>
-                    <p id="next-live-desc" class="text-emerald-100/80 mb-6">Get ready to join our next live interactive session with top instructors.</p>
+                    <p id="next-live-desc" class="text-emerald-100/80 mb-6">Join our top-rated teachers for a live interactive learning experience.</p>
                     <a id="join-now-btn" href="live.html" class="inline-flex items-center px-6 py-3 bg-white text-emerald-900 font-bold rounded-xl hover:bg-emerald-50 transition shadow-lg">
                         Join Session
                         <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -99,8 +99,8 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 </div>
                 <div>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Instructors</p>
-                    <p id="stat-instructors" class="text-xl font-bold text-slate-800 dark:text-white">0</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Teachers</p>
+                    <p id="stat-teachers" class="text-xl font-bold text-slate-800 dark:text-white">0</p>
                 </div>
             </div>
             <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
@@ -137,17 +137,17 @@
             </div>
             
             <div id="announcement-container" class="min-h-[100px]">
+                <!-- Loading State -->
                 <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl animate-pulse">
                     <div class="h-5 bg-slate-200 dark:bg-slate-800 rounded w-1/3 mb-4"></div>
                     <div class="h-4 bg-slate-100 dark:bg-slate-800 rounded w-3/4 mb-2"></div>
-                    <div class="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/2"></div>
                 </div>
             </div>
         </section>
 
-        <!-- Main Content Row -->
+        <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <!-- Top Instructors -->
+            <!-- Teachers Section (Data from "Teachers" sheet) -->
             <section class="space-y-6">
                 <div class="flex items-center justify-between">
                     <h2 class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -156,7 +156,9 @@
                     </h2>
                     <a href="instructors.html" class="text-sm font-bold text-emerald-600 hover:underline">View All</a>
                 </div>
-                <div id="top-instructors-list" class="space-y-4"></div>
+                <div id="teachers-list" class="space-y-4">
+                    <!-- Dynamic teacher cards inject here -->
+                </div>
             </section>
 
             <!-- Live Schedule -->
@@ -168,7 +170,9 @@
                     </h2>
                     <a href="live.html" class="text-sm font-bold text-emerald-600 hover:underline">See More</a>
                 </div>
-                <div id="live-schedule-list" class="space-y-4"></div>
+                <div id="live-schedule-list" class="space-y-4">
+                    <!-- Dynamic schedule inject here -->
+                </div>
             </section>
         </div>
     </main>
@@ -184,6 +188,7 @@
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         let countdownInterval;
 
+        // Theme Toggle
         const themeToggle = document.getElementById('theme-toggle');
         const themeIcon = document.getElementById('theme-icon');
         const updateIcon = () => {
@@ -206,7 +211,7 @@
             }
             document.getElementById('nav-phone').textContent = session.user.user_metadata?.phone_number || session.user.phone || "User";
             await Promise.all([
-                loadDashboardInstructors(), 
+                loadTeachers(), 
                 loadLiveSchedule(),
                 loadLatestAnnouncement()
             ]);
@@ -217,11 +222,10 @@
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet1!A:C?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const res = await fetch(url);
                 const data = await res.json();
-                
                 if (data.values && data.values.length > 1) {
                     const latest = data.values[data.values.length - 1];
                     document.getElementById('announcement-container').innerHTML = `
-                        <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl latest-announcement-highlight shadow-sm">
+                        <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl latest-announcement-highlight shadow-sm transition-all hover:shadow-md">
                             <div class="flex justify-between items-start mb-3">
                                 <h3 class="font-bold text-slate-900 dark:text-white text-lg">${latest[0]}</h3>
                                 <span class="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2.5 py-1 rounded-full uppercase tracking-wider">New</span>
@@ -233,38 +237,33 @@
                             </div>
                         </div>
                     `;
-                } else {
-                    document.getElementById('announcement-container').innerHTML = `<p class="text-sm text-slate-500 italic text-center py-8">No announcements available.</p>`;
                 }
-            } catch (err) {
-                console.error("Announcement load error:", err);
-                document.getElementById('announcement-container').innerHTML = `<p class="text-sm text-red-500 text-center py-8">Failed to load latest announcement.</p>`;
-            }
+            } catch (err) { console.error(err); }
         }
 
-        async function loadDashboardInstructors() {
+        async function loadTeachers() {
             try {
-                // Assuming Sheet2 now contains Instructor data or mapped to instructor fields
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:E?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
+                // Fetching from "Teachers" sheet
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Teachers!A:E?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const res = await fetch(url);
                 const data = await res.json();
                 if (data.values) {
-                    const instructors = data.values.slice(1, 5);
-                    document.getElementById('stat-instructors').textContent = data.values.length - 1;
-                    document.getElementById('top-instructors-list').innerHTML = instructors.map(i => `
-                        <a href="singleinstructor.html?id=${i[0]}" class="flex items-center gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-200 transition shadow-sm">
-                            <img src="${i[3] || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200'}" class="w-14 h-14 rounded-full object-cover border-2 border-slate-100 dark:border-slate-800">
-                            <div>
-                                <h4 class="font-bold text-slate-800 dark:text-white text-sm">${i[1]}</h4>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${i[2] || 'Senior Expert'}</p>
+                    const teachers = data.values.slice(1, 6); // Take top 5
+                    document.getElementById('stat-teachers').textContent = data.values.length - 1;
+                    document.getElementById('teachers-list').innerHTML = teachers.map(t => `
+                        <a href="singleinstructor.html?id=${t[0]}" class="group flex items-center gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 transition shadow-sm">
+                            <img src="${t[3] || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200'}" class="w-14 h-14 rounded-full object-cover border-2 border-slate-100 dark:border-slate-800 group-hover:border-emerald-500 transition-colors">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-slate-800 dark:text-white text-sm group-hover:text-emerald-600 transition-colors">${t[1]}</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">${t[2] || 'Expert Educator'}</p>
                             </div>
-                            <div class="ml-auto">
-                                <svg class="w-4 h-4 text-slate-300 group-hover:text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                            <div class="text-slate-300 group-hover:text-emerald-500 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                             </div>
                         </a>
                     `).join('');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error("Teachers load error:", err); }
         }
 
         async function loadLiveSchedule() {
