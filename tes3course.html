@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instructor Courses | EduStream</title>
+    <title>Course Catalog | EduStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -73,25 +73,19 @@
         <div class="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
             <div class="space-y-4">
                 <div class="flex items-center gap-3">
-                    <span class="text-emerald-600 dark:text-emerald-500 font-bold tracking-widest text-xs uppercase">Instructor Portfolio</span>
-                    <div id="view-mode-indicator" class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase hidden">Teacher Mode</div>
+                    <span class="text-emerald-600 dark:text-emerald-500 font-bold tracking-widest text-xs uppercase">Course Catalog</span>
                 </div>
                 <h1 id="page-title" class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
                     Explore <span class="text-emerald-600">Courses</span>
                 </h1>
-                <p id="view-description" class="text-slate-500 dark:text-slate-400 max-w-xl text-lg">Browsing courses curated by our leading experts.</p>
+                <p id="view-description" class="text-slate-500 dark:text-slate-400 max-w-xl text-lg">Your journey to mastery starts here. Choose a course to begin your curriculum.</p>
             </div>
             
             <div class="flex flex-col sm:flex-row items-center gap-4">
                 <div class="relative flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full sm:w-auto overflow-hidden">
-                    <input type="text" id="search-input" placeholder="Search these courses..." class="pl-12 pr-4 py-3 bg-transparent text-sm font-medium focus:outline-none w-full sm:w-64 dark:text-white" />
+                    <input type="text" id="search-input" placeholder="Search courses..." class="pl-12 pr-4 py-3 bg-transparent text-sm font-medium focus:outline-none w-full sm:w-64 dark:text-white" />
                     <svg class="absolute left-4 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
-
-                <a href="instructors.html" class="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-emerald-500/10 whitespace-nowrap">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                    <span>Back to Instructors</span>
-                </a>
             </div>
         </div>
 
@@ -100,7 +94,7 @@
         </div>
 
         <div id="course-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Content Injected via Script -->
+            <!-- Shimmer Loading -->
             <div class="animate-pulse bg-white dark:bg-slate-900 h-96 rounded-3xl"></div>
             <div class="animate-pulse bg-white dark:bg-slate-900 h-96 rounded-3xl"></div>
             <div class="animate-pulse bg-white dark:bg-slate-900 h-96 rounded-3xl"></div>
@@ -118,17 +112,16 @@
 
         const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         
-        // URL Parameter Logic
+        // Handle Filtering by URL Parameter (?id=[instructor_id])
         const urlParams = new URLSearchParams(window.location.search);
-        const urlInstructorId = urlParams.get('id'); // Get ?id=xxx from URL
+        const urlInstructorId = urlParams.get('id');
 
         let allCourses = [];
         let allTeachers = {}; 
-        let currentUserId = null;
         let activeCategory = 'all';
         let searchQuery = '';
 
-        // Theme Logic
+        // Theme Management
         document.getElementById('theme-toggle').onclick = () => {
             const isDark = document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -142,6 +135,7 @@
         };
         updateIcons();
 
+        // Search Input
         document.getElementById('search-input').oninput = (e) => {
             searchQuery = e.target.value.toLowerCase();
             renderCourses();
@@ -150,10 +144,9 @@
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return window.location.assign('login.html');
-            currentUserId = session.user.id;
             
             try {
-                // 1. Fetch Teacher Metadata
+                // 1. Fetch Instructor Data
                 const teacherUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Teachers!A:E?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const teacherRes = await fetch(teacherUrl);
                 const teacherData = await teacherRes.json();
@@ -163,30 +156,28 @@
                         allTeachers[row[0]] = {
                             id: row[0],
                             name: row[1] || 'Unknown Teacher',
-                            bio: row[2] || 'Professional Educator',
-                            avatar: row[3] || `https://api.dicebear.com/7.x/initials/svg?seed=${row[1]}`,
-                            specialty: row[4] || 'General'
+                            avatar: row[3] || `https://api.dicebear.com/7.x/initials/svg?seed=${row[1]}`
                         };
                     });
                 }
 
-                // Update UI Title if viewing a specific instructor
+                // If filtering by specific instructor, update page header
                 if (urlInstructorId && allTeachers[urlInstructorId]) {
                     document.getElementById('page-title').innerHTML = `Courses by <span class="text-emerald-600">${allTeachers[urlInstructorId].name}</span>`;
                 }
 
-                // 2. Fetch Courses
+                // 2. Fetch Course Data (Sheet2)
                 const courseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Sheet2!A:G?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const courseRes = await fetch(courseUrl);
                 const courseData = await courseRes.json();
                 
                 if (courseData && courseData.values) {
                     allCourses = courseData.values.slice(1).map(row => ({
-                        id: row[0] || '',
+                        id: row[0] || '', // Column A: Course ID
                         title: row[1] || 'Untitled Course',
                         description: row[2] || 'Comprehensive training program.',
                         image: row[3] || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800',
-                        teacherId: row[4] || '', 
+                        teacherId: row[4] || '', // Column E: Teacher ID
                         price: row[5] || 'Free',
                         category: row[6] || 'General'
                     }));
@@ -195,17 +186,15 @@
                     renderCourses();
                 }
             } catch (error) {
-                console.error("Data Fetching Error:", error);
-                document.getElementById('course-grid').innerHTML = `<div class="col-span-full py-20 text-center opacity-50 text-slate-500">Could not load library data.</div>`;
+                console.error("Initialization Error:", error);
+                document.getElementById('course-grid').innerHTML = `<div class="col-span-full py-20 text-center opacity-50 text-slate-500">Unable to load courses. Please try again later.</div>`;
             }
         }
 
         function setupCategories() {
             const filterContainer = document.getElementById('category-filters');
-            
-            // If filtering by instructor, only show categories that instructor has courses in
-            let sourceList = urlInstructorId ? allCourses.filter(c => c.teacherId === urlInstructorId) : allCourses;
-            const categories = [...new Set(sourceList.map(c => c.category))];
+            const relevantCourses = urlInstructorId ? allCourses.filter(c => c.teacherId === urlInstructorId) : allCourses;
+            const categories = [...new Set(relevantCourses.map(c => c.category))];
             
             categories.forEach(cat => {
                 const btn = document.createElement('button');
@@ -232,15 +221,17 @@
             const grid = document.getElementById('course-grid');
             let filtered = allCourses;
 
-            // NEW LOGIC: Filter by instructor ID from URL if present
+            // Filter by Instructor ID if passed via URL
             if (urlInstructorId) {
                 filtered = filtered.filter(c => c.teacherId === urlInstructorId);
             }
 
+            // Filter by Category
             if (activeCategory !== 'all') {
                 filtered = filtered.filter(c => c.category === activeCategory);
             }
 
+            // Filter by Search
             if (searchQuery) {
                 filtered = filtered.filter(c => 
                     c.title.toLowerCase().includes(searchQuery) || 
@@ -249,12 +240,12 @@
             }
 
             if (filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-32 text-center text-slate-500 font-medium">No courses found for this instructor matching your criteria.</div>`;
+                grid.innerHTML = `<div class="col-span-full py-32 text-center text-slate-500 font-medium">No courses found matching your criteria.</div>`;
                 return;
             }
 
             grid.innerHTML = filtered.map(c => {
-                const teacher = allTeachers[c.teacherId] || { name: 'Faculty Member', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Staff' };
+                const teacher = allTeachers[c.teacherId] || { name: 'Expert Instructor', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Staff' };
                 
                 return `
                 <div class="course-card group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-3 flex flex-col shadow-xl shadow-slate-200/40 dark:shadow-none hover:border-emerald-500 transition-colors">
@@ -267,38 +258,4 @@
                             </span>
                         </div>
                         <div class="absolute bottom-4 left-4 right-4 flex items-center gap-3">
-                            <img src="${teacher.avatar}" class="w-8 h-8 rounded-full border-2 border-white/50 object-cover" alt="${teacher.name}">
-                            <div class="overflow-hidden">
-                                <p class="text-white text-[10px] font-medium opacity-80 leading-none mb-1">Instructor</p>
-                                <h4 class="text-white text-xs font-bold truncate leading-none">${teacher.name}</h4>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="px-2 pb-2 flex flex-col flex-grow">
-                        <h3 class="text-slate-900 dark:text-white font-bold text-base mb-2 line-clamp-1">${c.title}</h3>
-                        <p class="text-slate-500 dark:text-slate-400 text-xs line-clamp-2 leading-relaxed mb-6">
-                            ${c.description}
-                        </p>
-
-                        <div class="mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
-                            <div class="flex flex-col">
-                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Tuition</span>
-                                <span class="text-lg font-black text-slate-900 dark:text-white leading-tight">
-                                    ${c.price === 'Free' ? 'Free' : '$' + c.price}
-                                </span>
-                            </div>
-                            <a href="singlecourse.html?id=${c.id}" 
-                               class="px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all">
-                                Enroll
-                            </a>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        init();
-    </script>
-</body>
-</html>
+                            <img src="${teacher.avatar}" class="w-8 h-
