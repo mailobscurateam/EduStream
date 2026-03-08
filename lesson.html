@@ -221,9 +221,10 @@
 
         function extractVideoId(url) {
             if (!url) return null;
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            // Enhanced extraction to handle more YouTube URL formats
+            const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
             const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
+            return (match && match[7].length === 11) ? match[7] : null;
         }
 
         async function fetchLessonDetails() {
@@ -237,6 +238,7 @@
                 const data = await response.json();
                 
                 if (data.values) {
+                    // Look through rows, column I (index 8) is usually the ID
                     const row = data.values.find(r => r[8] === lessonIdFromUrl);
                     if (row) {
                         const lessonTitle = row[2] || "Untitled Module";
@@ -250,11 +252,15 @@
                         badge.classList.remove('hidden');
 
                         videoIdToLoad = extractVideoId(videoUrl);
+                        console.log("Extracted Video ID:", videoIdToLoad);
                         checkReady();
+                    } else {
+                        document.getElementById('display-title').innerText = "Lesson not found.";
                     }
                 }
             } catch (err) {
                 console.error("Fetch Error:", err);
+                document.getElementById('display-title').innerText = "Connectivity Error.";
             }
         }
 
@@ -270,7 +276,10 @@
         }
 
         function createPlayer(vId) {
-            if (player) return;
+            if (player) {
+                player.loadVideoById(vId);
+                return;
+            }
             player = new YT.Player('youtube-player', {
                 videoId: vId,
                 playerVars: {
@@ -280,11 +289,13 @@
                     'rel': 0,
                     'modestbranding': 1,
                     'fs': 0,
-                    'iv_load_policy': 3
+                    'iv_load_policy': 3,
+                    'origin': window.location.origin
                 },
                 events: {
                     'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': onPlayerStateChange,
+                    'onError': (e) => console.error("YT Player Error:", e)
                 }
             });
         }
@@ -429,6 +440,7 @@
 
         function goBack() { window.history.back(); }
 
+        // Load YouTube IFrame API
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -436,7 +448,6 @@
 
         checkAuth();
 
-        // Listen for fullscreen change to ensure controls are handled correctly
         document.addEventListener('fullscreenchange', showControls);
     </script>
 </body>
