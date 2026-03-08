@@ -261,7 +261,8 @@
                         courseId: row[0],
                         title: row[1] || 'Untitled Module',
                         description: row[2] || 'No description available.',
-                        linkBase: row[5] || 'lesson.html',
+                        contentUrl: row[5] || '#',
+                        contentType: row[6] || '', // Column G
                         monthNum: parseInt(row[7]) || 1
                     }));
                     filteredLessons = allLessons.filter(l => l.courseId === targetCourseId);
@@ -304,12 +305,24 @@
             }
 
             grid.innerHTML = list.map((l, i) => {
-                const link = l.linkBase.includes('?') ? `${l.linkBase}&id=${targetCourseId}` : `${l.linkBase}?id=${targetCourseId}`;
+                const isVideo = l.contentType.toLowerCase() === 'video';
+                let finalUrl, targetAttr;
+
+                if (isVideo) {
+                    // Logic for Video: Open in internal lesson.html viewer
+                    finalUrl = `lesson.html?id=${targetCourseId}&url=${encodeURIComponent(l.contentUrl)}`;
+                    targetAttr = '_self';
+                } else {
+                    // Logic for non-video or blank: Open content directly in a new tab
+                    finalUrl = l.contentUrl;
+                    targetAttr = '_blank';
+                }
+
                 return `
-                <a href="${link}" class="lesson-card group bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 rounded-[2.5rem] p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center animate-fade-in" style="animation-delay: ${i * 0.05}s">
+                <a href="${finalUrl}" target="${targetAttr}" class="lesson-card group bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 rounded-[2.5rem] p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center animate-fade-in" style="animation-delay: ${i * 0.05}s">
                     <div class="flex-grow pr-0 sm:pr-8 mb-6 sm:mb-0">
                         <div class="inline-flex items-center gap-2 mb-4 px-3 py-1 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 text-[10px] font-black uppercase tracking-[0.15em] rounded-lg border border-brand-100 dark:border-brand-800/40">
-                            Module ${i + 1}
+                            Module ${i + 1} • ${l.contentType || 'Resource'}
                         </div>
                         <h3 class="font-bold text-slate-900 dark:text-white text-2xl mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">${l.title}</h3>
                         <p class="text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl text-sm sm:text-base">${l.description}</p>
