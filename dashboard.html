@@ -46,8 +46,12 @@
                     <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                         <svg id="theme-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
                     </button>
-                    <span id="nav-phone" class="hidden sm:inline text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500 dark:text-slate-400">Loading...</span>
-                    <button onclick="handleLogout()" class="text-slate-400 hover:text-red-500 transition">
+                    <!-- Updated to show Email instead of Phone -->
+                    <div class="hidden sm:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" /></svg>
+                        <span id="nav-email" class="text-xs font-medium text-slate-600 dark:text-slate-300">Loading...</span>
+                    </div>
+                    <button onclick="handleLogout()" class="text-slate-400 hover:text-red-500 transition ml-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     </button>
                 </div>
@@ -57,7 +61,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- Hero Countdown Section (Upcoming Live Class) -->
+        <!-- Hero Countdown Section -->
         <section id="hero-countdown" class="relative overflow-hidden bg-emerald-900 rounded-3xl p-8 md:p-12 mb-10 text-white hidden">
             <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
                 <div class="max-w-xl">
@@ -147,7 +151,7 @@
 
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <!-- Teachers Section (Data from "Teachers" sheet) -->
+            <!-- Teachers Section -->
             <section class="space-y-6">
                 <div class="flex items-center justify-between">
                     <h2 class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -157,7 +161,7 @@
                     <a href="instructors.html" class="text-sm font-bold text-emerald-600 hover:underline">View All</a>
                 </div>
                 <div id="teachers-list" class="space-y-4">
-                    <!-- Dynamic teacher cards inject here -->
+                    <!-- Dynamic cards inject here -->
                 </div>
             </section>
 
@@ -209,7 +213,9 @@
                 window.location.assign('login.html');
                 return;
             }
-            document.getElementById('nav-phone').textContent = session.user.user_metadata?.phone_number || session.user.phone || "User";
+            // MODIFIED: Display email instead of phone number
+            document.getElementById('nav-email').textContent = session.user.email || "User";
+            
             await Promise.all([
                 loadTeachers(), 
                 loadLiveSchedule(),
@@ -243,12 +249,11 @@
 
         async function loadTeachers() {
             try {
-                // Fetching from "Teachers" sheet
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/Teachers!A:E?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
                 const res = await fetch(url);
                 const data = await res.json();
                 if (data.values) {
-                    const teachers = data.values.slice(1, 6); // Take top 5
+                    const teachers = data.values.slice(1, 6);
                     document.getElementById('stat-teachers').textContent = data.values.length - 1;
                     document.getElementById('teachers-list').innerHTML = teachers.map(t => `
                         <a href="course.html?id=${t[0]}" class="group flex items-center gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 transition shadow-sm">
